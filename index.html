@@ -1,0 +1,1746 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#EEF2EF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111714" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="回路工房">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box;height:100%}*,*::before,*::after{box-sizing:border-box}body{margin:0;font:14px system-ui,sans-serif;overscroll-behavior:none}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>回路工房</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+JP:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@700;900&display=swap">
+<style>
+/* 方眼の回路図用紙 ＋ KiCad風の配色（部品=えんじ、配線=緑）＋ オシロスコープ画面 */
+:root{
+  --paper:#EEF2EF; --panel:#FFFFFF; --ink:#18211D; --muted:#5A6962; --line:#D3DCD7; --grid:#BFCBC4;
+  --part:#972237; --wire:#1D7646; --accent:#1F5BB8; --accent-ink:#FFFFFF; --sel:#D98200; --chip:#E3EAE6;
+  --vpos:#E0472A; --vneg:#2479E0; --vzero:#7E8C85; --led:#FF3B2F;
+  --scope:#0D1411; --scope-grid:#21302A; --scope-axis:#33473E; --scope-txt:#9DB3A8;
+  --ch1:#F4CC2A; --ch2:#35D0E4; --ch3:#F060D2; --ch4:#4E8CFF;
+  --f-disp:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",sans-serif;
+  --f-body:"IBM Plex Sans JP","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#111714; --panel:#18201C; --ink:#E3EBE6; --muted:#93A49B; --line:#2A3631; --grid:#2E3B35;
+  --part:#F1828F; --wire:#4CC985; --accent:#76A6F7; --accent-ink:#0B1220; --sel:#FFB13B; --chip:#222C27;
+  --vpos:#FF7A55; --vneg:#5AA2FF; --vzero:#6E7D76; --led:#FF5A48;
+  --scope:#070B09; --scope-grid:#1B2721; --scope-axis:#2C3D35; --scope-txt:#8FA79B; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --paper:#111714; --panel:#18201C; --ink:#E3EBE6; --muted:#93A49B; --line:#2A3631; --grid:#2E3B35;
+  --part:#F1828F; --wire:#4CC985; --accent:#76A6F7; --accent-ink:#0B1220; --sel:#FFB13B; --chip:#222C27;
+  --vpos:#FF7A55; --vneg:#5AA2FF; --vzero:#6E7D76; --led:#FF5A48;
+  --scope:#070B09; --scope-grid:#1B2721; --scope-axis:#2C3D35; --scope-txt:#8FA79B; color-scheme:dark }
+
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0;overflow:hidden;
+  -webkit-tap-highlight-color:transparent}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+#app{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto;grid-template-columns:minmax(0,1fr);max-width:1100px;margin:0 auto}
+header.top{display:flex;align-items:baseline;gap:10px;padding-block:10px 6px;min-width:0}
+.brand{font-family:var(--f-disp);font-weight:900;font-size:19px;letter-spacing:.06em;white-space:nowrap}
+.brand small{font-family:var(--f-mono);font-weight:500;font-size:10px;letter-spacing:.14em;color:var(--muted);margin-left:6px}
+.patname{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+main{min-height:0;min-width:0;position:relative}
+.view{height:100%;min-height:0;min-width:0}
+
+/* ---- エディタ ---- */
+#v-edit{display:flex;flex-direction:column;gap:8px}
+.simbar{display:flex;align-items:center;gap:6px;min-width:0}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 11px;font-size:13px;line-height:1.3;white-space:nowrap}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.run.on{background:var(--sel);border-color:var(--sel);color:#1a1200}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--vpos);border-color:color-mix(in srgb,var(--vpos) 40%,var(--line))}
+.btn[disabled]{opacity:.4}
+.tdisp{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.sp{flex:1}
+.stage{flex:1;min-height:120px;position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--paper)}
+#cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+.hint{position:absolute;left:8px;top:8px;right:8px;font-size:11.5px;color:var(--muted);pointer-events:none;line-height:1.4;text-shadow:0 0 4px var(--paper),0 0 4px var(--paper)}
+.zoom{position:absolute;right:8px;bottom:8px;display:flex;flex-direction:column;gap:6px}
+.zoom button{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--panel);font-size:16px;line-height:1;display:grid;place-items:center}
+#toast{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 12px;border-radius:8px;font-size:12.5px;max-width:86%;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none}
+#toast.show{opacity:1}
+
+.scope{background:var(--scope);border-radius:12px;padding:6px 8px 8px;color:var(--scope-txt);flex:none}
+.scopehead{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:2px 10px;font-family:var(--f-mono);font-size:11px;min-width:0}
+.scopehead .ttl{letter-spacing:.06em;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.legend{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 10px;height:34px;line-height:17px;overflow:hidden;font-variant-numeric:tabular-nums}
+.legend span{white-space:pre;overflow:hidden;text-overflow:ellipsis}
+@media (min-width:640px){ .legend{grid-template-columns:repeat(4,minmax(0,1fr));height:17px} }
+.legend b{font-weight:600}
+.scopehead button{background:none;border:1px solid var(--scope-axis);color:var(--scope-txt);border-radius:6px;font-size:11px;padding:1px 7px}
+#sc{display:block;width:100%;height:118px;margin-top:4px}
+.scope.collapsed #sc{display:none}
+
+.palette{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;flex:none;scrollbar-width:thin}
+.chip{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:58px;padding:5px 6px 4px;border-radius:10px;border:1px solid var(--line);background:var(--panel);font-size:10.5px;line-height:1.2;color:var(--ink)}
+.chip canvas{width:44px;height:26px;display:block}
+.chip.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--panel))}
+.chip.tool{min-width:50px;font-weight:600}
+.chip.tool .ic{font-size:16px;height:26px;display:grid;place-items:center;font-family:var(--f-mono)}
+.pgroup{flex:none;writing-mode:vertical-rl;font-size:9.5px;letter-spacing:.2em;color:var(--muted);padding:2px 0;border-left:1px dashed var(--line);margin-left:2px}
+
+.sheet{position:absolute;left:8px;right:8px;bottom:8px;max-height:62%;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:10px 12px 12px}
+.sheet h3{margin:0;font-size:15px;display:flex;align-items:baseline;gap:8px;min-width:0}
+.sheet h3 .tn{font-size:12px;color:var(--muted);font-weight:400}
+.sheet .row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.field{display:grid;grid-template-columns:7.5em 1fr;align-items:center;gap:8px;margin-top:8px}
+.field label{font-size:12.5px;color:var(--muted)}
+.field .in{display:flex;align-items:center;gap:6px;min-width:0}
+.field input,.field select{width:100%;min-width:0;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--paper);font-family:var(--f-mono)}
+.field .u{font-family:var(--f-mono);color:var(--muted);font-size:12px;min-width:1.6em}
+.readout{margin-top:10px;border-top:1px dashed var(--line);padding-top:6px;display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:12.5px}
+.readout dt{color:var(--muted)}
+.readout dd{margin:0;font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right}
+.x{margin-left:auto;border:none;background:none;font-size:20px;line-height:1;color:var(--muted);padding:0 2px}
+
+/* ---- 一覧ビュー ---- */
+.scroll{height:100%;overflow:auto;padding-bottom:16px}
+.vhead{padding-block:4px 10px}
+.vhead h2{font-family:var(--f-disp);font-weight:900;font-size:20px;margin:0;text-wrap:balance}
+.vhead p{margin:2px 0 0;color:var(--muted);font-size:12.5px;max-width:60ch}
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.filters button{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:3px 12px;font-size:12px}
+.filters button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.card{border:1px solid var(--line);background:var(--panel);border-radius:12px;overflow:hidden;text-align:left;padding:0;display:flex;flex-direction:column;min-width:0}
+.card canvas{width:100%;height:120px;display:block;background:var(--paper);border-bottom:1px solid var(--line)}
+.card .cb{padding:8px 12px 11px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.card .cat{font-family:var(--f-mono);font-size:10px;letter-spacing:.14em;color:var(--muted)}
+.card .nm{font-weight:600;font-size:15px}
+.card .sm{font-size:12.5px;color:var(--muted);line-height:1.5}
+.dgroup{margin:14px 0 6px;font-family:var(--f-mono);font-size:11px;letter-spacing:.2em;color:var(--muted)}
+.plist{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px}
+.pitem{display:grid;grid-template-columns:64px 1fr;gap:10px;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 10px;text-align:left;min-width:0}
+.pitem canvas{width:64px;height:40px}
+.pitem .nm{font-weight:600}
+.pitem .en{font-family:var(--f-mono);font-size:10.5px;color:var(--muted);margin-left:6px}
+.pitem .sm{font-size:12px;color:var(--muted);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* ---- 下部タブ ---- */
+nav.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding-block:8px 8px}
+nav.tabs button{border:none;background:none;padding:6px 4px;border-radius:10px;font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:1px}
+nav.tabs button .g{font-family:var(--f-mono);font-size:15px;line-height:1.1}
+nav.tabs button.on{color:var(--ink);background:var(--chip);font-weight:600}
+
+/* ---- モーダル（詳細） ---- */
+.modal{position:fixed;inset:0;background:rgba(10,16,13,.45);z-index:20;display:flex;justify-content:center;align-items:flex-end}
+.mbox{background:var(--panel);width:100%;max-width:760px;max-height:calc(100% - 24px - env(safe-area-inset-top,0px));overflow:auto;border-radius:16px 16px 0 0;
+  padding:14px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.mtop{display:flex;align-items:center;gap:8px;position:sticky;top:-14px;background:var(--panel);padding-block:4px 8px;z-index:1}
+.mtop h2{font-family:var(--f-disp);font-weight:900;font-size:19px;margin:0;line-height:1.3;text-wrap:balance}
+.mtop .en{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.mbox h4{margin:16px 0 4px;font-size:12px;letter-spacing:.14em;color:var(--muted);font-weight:600}
+.mbox p{margin:0;max-width:65ch}
+.mbox ol{margin:0;padding-left:1.4em;max-width:65ch}
+.mbox ol li{margin:4px 0}
+.mbox ul{margin:0;padding-left:1.2em}
+.big{width:100%;height:200px;display:block;border:1px solid var(--line);border-radius:12px;background:var(--paper)}
+.sym{width:100%;height:120px;display:block;border:1px solid var(--line);border-radius:12px;background:var(--paper)}
+.fbox{font-family:var(--f-mono);font-size:13px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:grid;gap:2px;overflow-x:auto}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tags button{border:1px solid var(--line);background:var(--chip);border-radius:999px;padding:3px 11px;font-size:12px}
+.note{border-left:3px solid var(--sel);padding:6px 10px;background:color-mix(in srgb,var(--sel) 9%,var(--panel));border-radius:0 8px 8px 0;font-size:13px;max-width:65ch}
+.mact{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.srow{display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line);padding:8px 0}
+.srow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.empty{color:var(--muted);font-size:13px;padding:8px 0}
+input[type=range]{width:100%}
+@media (min-width:760px){ #sc{height:150px} .big{height:260px} }
+@media (prefers-reduced-motion:reduce){ #toast{transition:none} }
+</style>
+
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <div class="brand">回路工房<small>KAIRO KOBO</small></div>
+    <div class="patname" id="patName"></div>
+  </header>
+  <main>
+    <section id="v-edit" class="view">
+      <div class="simbar">
+        <button class="btn run" id="bRun">▶ 実行</button>
+        <button class="btn" id="bReset" title="時間を0に戻す">リセット</button>
+        <span class="sp"></span>
+        <button class="btn" id="bExplain" hidden>解説</button>
+        <button class="btn" id="bUndo">戻す</button>
+        <button class="btn" id="bMenu" aria-label="メニュー">⋯</button>
+      </div>
+      <div class="stage" id="stage">
+        <canvas id="cv"></canvas>
+        <div class="hint" id="hint"></div>
+        <div class="zoom"><button id="zIn" aria-label="拡大">＋</button><button id="zOut" aria-label="縮小">−</button><button id="zFit" aria-label="全体表示">⤢</button></div>
+        <div id="toast"></div>
+        <div class="sheet" id="sheet" hidden></div>
+      </div>
+      <div class="scope" id="scope">
+        <div class="scopehead"><span class="ttl" id="tdisp">t = 0 s</span><button id="bScope">隠す</button><div class="legend" id="legend"></div></div>
+        <canvas id="sc"></canvas>
+      </div>
+      <div class="palette" id="palette"></div>
+    </section>
+    <section id="v-pat" class="view" hidden>
+      <div class="scroll">
+        <div class="vhead"><h2>回路パターン</h2><p>用途ごとの定番回路です。開くとエディタに読み込まれ、すぐにシミュレーションが始まります。</p></div>
+        <div class="filters" id="patFilters"></div>
+        <div class="cards" id="patCards"></div>
+      </div>
+    </section>
+    <section id="v-doc" class="view" hidden>
+      <div class="scroll">
+        <div class="vhead"><h2>部品図鑑</h2><p>部品とICの役割、しくみ、計算式、使いどころ。記号はJIS式（抵抗は四角）で描いています。</p></div>
+        <div id="docList"></div>
+      </div>
+    </section>
+  </main>
+  <nav class="tabs">
+    <button data-v="edit" class="on"><span class="g">⌁</span>エディタ</button>
+    <button data-v="pat"><span class="g">⊞</span>回路パターン</button>
+    <button data-v="doc"><span class="g">▤</span>部品図鑑</button>
+  </nav>
+</div>
+<div class="modal" id="modal" hidden><div class="mbox" id="mbox"></div></div>
+
+<script>
+'use strict';
+/* ===== 回路工房 シミュレーションコア ===== */
+const VT = 0.025852, GMIN = 1e-9;
+
+function rotPt(x, y, r) { r = ((r % 4) + 4) % 4; return r === 0 ? [x, y] : r === 1 ? [-y, x] : r === 2 ? [-x, -y] : [y, -x]; }
+const key = (x, y) => x + ',' + y;
+function dexp(x) { return x > 80 ? Math.exp(80) * (1 + x - 80) : Math.exp(x); }
+function pnjlim(vnew, vold, vt, vcrit) {
+  if (vnew > vcrit && Math.abs(vnew - vold) > 2 * vt) {
+    if (vold > 0) { const arg = 1 + (vnew - vold) / vt; vnew = arg > 0 ? vold + vt * Math.log(arg) : vcrit; }
+    else vnew = vt * Math.log(vnew / vt);
+  }
+  return vnew;
+}
+function softmin(a, b, k) { const m = Math.min(a, b); return m - k * Math.log1p(Math.exp(-Math.abs(a - b) / k)); }
+function softplus(x, k) { return x > 30 * k ? x : k * Math.log1p(Math.exp(x / k)); }
+
+/* ---- SI 表記 ---- */
+const PFX = [[1e9, 'G'], [1e6, 'M'], [1e3, 'k'], [1, ''], [1e-3, 'm'], [1e-6, 'µ'], [1e-9, 'n'], [1e-12, 'p']];
+function fmtSI(v, unit, digits) {
+  digits = digits || 3;
+  if (!isFinite(v)) return '—';
+  if (Math.abs(v) < 1e-13) return '0 ' + unit;
+  const a = Math.abs(v);
+  for (const [m, p] of PFX) {
+    if (a >= m * 0.9995) return String(parseFloat((v / m).toPrecision(digits))) + ' ' + p + unit;
+  }
+  return String(parseFloat((v / 1e-12).toPrecision(digits))) + ' p' + unit;
+}
+function parseSI(str) {
+  const m = String(str).trim().replace(/,/g, '').match(/^([-+]?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?)\s*([GMkKmuµnp]?)/);
+  if (!m) return NaN;
+  const mul = { G: 1e9, M: 1e6, k: 1e3, K: 1e3, m: 1e-3, u: 1e-6, 'µ': 1e-6, n: 1e-9, p: 1e-12 }[m[2]] || 1;
+  return parseFloat(m[1]) * mul;
+}
+
+/* ---- 部品定義 ---- */
+const P2 = [[0, 0], [2, 0]];
+const pv = (e, s, i) => s.v(e.n[i]);
+
+function diodeIG(v, Is, n, Vz) {
+  const nvt = n * VT;
+  const e1 = dexp(v / nvt);
+  let I = Is * (e1 - 1), g = Is * e1 / nvt;
+  if (Vz) { const e2 = dexp((-v - Vz) / nvt); I -= 1e-3 * e2; g += 1e-3 * e2 / nvt; }
+  return [I + GMIN * v, g + GMIN];
+}
+function diodeStamp(e, s, Is, n, Vz) {
+  const a = e.n[0], b = e.n[1];
+  let v = s.v(a) - s.v(b);
+  const nvt = n * VT, vcrit = nvt * Math.log(nvt / (Math.SQRT2 * Is));
+  const vold = e.st.vd || 0;
+  if (Vz && v < -Vz / 2) { v = -pnjlim(-v - Vz, -vold - Vz, nvt, vcrit) - Vz; }
+  else v = pnjlim(v, vold, nvt, vcrit);
+  e.st.vd = v;
+  const [I, g] = diodeIG(v, Is, n, Vz);
+  s.NL2(a, b, I, g, v);
+}
+function diodePost(e, s, Is, n, Vz) { e.st.i = diodeIG(pv(e, s, 0) - pv(e, s, 1), Is, n, Vz)[0]; }
+const twoInfo = (e, s, i) => [['電圧', pv(e, s, 0) - pv(e, s, 1), 'V'], ['電流', i, 'A']];
+
+function opampF(v) {
+  const [vn, vp, vo, vpos, vneg] = v;
+  const m = 0.1; let hi = vpos - m, lo = vneg + m;
+  if (hi < lo) { const c = (hi + lo) / 2; hi = lo = c; }
+  const mid = (hi + lo) / 2, half = Math.max((hi - lo) / 2, 1e-3);
+  const E = mid + half * Math.tanh(1e5 * (vp - vn) / half);
+  const io = (vo - E) / 1;
+  let ipos = 0, ineg = 0;
+  if (io < 0) ipos = -io; else ineg = -io;
+  return [0, 0, io, ipos, ineg];
+}
+function regF(v) {
+  const [vi, vo, vg] = v; const k = 0.02;
+  const vin = vi - vg;
+  const t = softplus(softmin(5, vin - 2, k), k);
+  const io = (vo - (vg + t)) / 0.05;
+  const iq = 0.003 * Math.tanh(Math.max(vin, 0));
+  const iin = (io < 0 ? -io : 0) + iq;
+  return [iin, io, -(iin + io)];
+}
+const GATE_FN = {
+  AND: (a, b) => a && b, OR: (a, b) => a || b, NAND: (a, b) => !(a && b), NOR: (a, b) => !(a || b), XOR: (a, b) => a !== b
+};
+function gateOut(e, s) { const out = e.n[e.n.length - 1]; s.G(out, 0, 1 / 50); s.I(0, out, (e.st.q ? 5 : 0) / 50); }
+
+const TYPES = {
+  R: {
+    name: '抵抗', prefix: 'R', pins: P2, group: '基本', params: [{ k: 'R', label: '抵抗値', unit: 'Ω', def: 1000 }],
+    stamp: (e, s) => s.G(e.n[0], e.n[1], 1 / Math.max(Math.abs(e.c.p.R), 1e-3)),
+    info: (e, s) => { const v = pv(e, s, 0) - pv(e, s, 1); return [['電圧', v, 'V'], ['電流', v / e.c.p.R, 'A'], ['電力', v * v / e.c.p.R, 'W']]; }
+  },
+  C: {
+    name: 'コンデンサ', prefix: 'C', pins: P2, group: '基本', params: [{ k: 'C', label: '容量', unit: 'F', def: 1e-6 }],
+    init: e => { e.st.v = 0; e.st.i = 0; },
+    stamp: (e, s) => { const g = Math.max(e.c.p.C, 1e-15) / s.dt; s.G(e.n[0], e.n[1], g); s.I(e.n[1], e.n[0], g * e.st.v); },
+    post: (e, s) => { const v = pv(e, s, 0) - pv(e, s, 1); e.st.i = Math.max(e.c.p.C, 1e-15) / s.dt * (v - e.st.v); e.st.v = v; },
+    info: (e, s) => twoInfo(e, s, e.st.i)
+  },
+  L: {
+    name: 'コイル', prefix: 'L', pins: P2, group: '基本', params: [{ k: 'L', label: 'インダクタンス', unit: 'H', def: 10e-3 }],
+    init: e => { e.st.i = 0; },
+    stamp: (e, s) => { const g = s.dt / Math.max(e.c.p.L, 1e-9); s.G(e.n[0], e.n[1], g); s.I(e.n[0], e.n[1], e.st.i); },
+    post: (e, s) => { e.st.i += s.dt / Math.max(e.c.p.L, 1e-9) * (pv(e, s, 0) - pv(e, s, 1)); },
+    info: (e, s) => twoInfo(e, s, e.st.i)
+  },
+  SW: {
+    name: 'スイッチ', prefix: 'SW', pins: P2, group: '基本', params: [], toggle: true, pdef: { on: false },
+    stamp: (e, s) => s.G(e.n[0], e.n[1], e.c.p.on ? 100 : 1e-9),
+    info: (e, s) => { const v = pv(e, s, 0) - pv(e, s, 1); return [['状態', e.c.p.on ? 'ON（閉）' : 'OFF（開）'], ['電流', v * (e.c.p.on ? 100 : 0), 'A']]; }
+  },
+  V: {
+    name: '直流電源', prefix: 'V', pins: P2, group: '電源', branch: true, params: [{ k: 'V', label: '電圧', unit: 'V', def: 5 }],
+    stamp: (e, s) => s.Vs(e.br, e.n[0], e.n[1], e.c.p.V),
+    info: (e, s) => [['電圧', e.c.p.V, 'V'], ['供給電流', -s.ib(e.br), 'A']]
+  },
+  AC: {
+    name: '交流電源', prefix: 'V', pins: P2, group: '電源', branch: true,
+    params: [{ k: 'A', label: '振幅', unit: 'V', def: 5 }, { k: 'f', label: '周波数', unit: 'Hz', def: 50 }, { k: 'off', label: 'オフセット', unit: 'V', def: 0 }],
+    stamp: (e, s) => { const p = e.c.p; s.Vs(e.br, e.n[0], e.n[1], p.off + p.A * Math.sin(2 * Math.PI * p.f * s.t1)); },
+    info: (e, s) => [['電圧', pv(e, s, 0) - pv(e, s, 1), 'V'], ['供給電流', -s.ib(e.br), 'A']]
+  },
+  SQ: {
+    name: '方形波電源', prefix: 'V', pins: P2, group: '電源', branch: true,
+    params: [{ k: 'hi', label: 'Hレベル', unit: 'V', def: 5 }, { k: 'lo', label: 'Lレベル', unit: 'V', def: 0 }, { k: 'f', label: '周波数', unit: 'Hz', def: 10 }],
+    stamp: (e, s) => { const p = e.c.p; const ph = (s.t1 * p.f) % 1; s.Vs(e.br, e.n[0], e.n[1], ph < 0.5 ? p.hi : p.lo); },
+    info: (e, s) => [['電圧', pv(e, s, 0) - pv(e, s, 1), 'V'], ['供給電流', -s.ib(e.br), 'A']]
+  },
+  RAIL: {
+    name: '電源端子', prefix: 'VCC', pins: [[0, 0]], group: '電源', branch: true, nolabel: true, params: [{ k: 'V', label: '電圧', unit: 'V', def: 5 }],
+    stamp: (e, s) => s.Vs(e.br, e.n[0], 0, e.c.p.V),
+    info: (e, s) => [['電圧', e.c.p.V, 'V'], ['供給電流', -s.ib(e.br), 'A']]
+  },
+  GND: { name: 'GND（グラウンド）', prefix: 'GND', pins: [[0, 0]], group: '電源', nolabel: true, params: [], info: () => [['電圧', 0, 'V']] },
+  D: {
+    name: 'ダイオード', prefix: 'D', pins: P2, group: '半導体', nl: true, params: [],
+    stamp: (e, s) => diodeStamp(e, s, 2.52e-9, 1.75), post: (e, s) => diodePost(e, s, 2.52e-9, 1.75), info: (e, s) => twoInfo(e, s, e.st.i || 0)
+  },
+  LED: {
+    name: 'LED（発光ダイオード）', prefix: 'LED', pins: P2, group: '半導体', nl: true, params: [],
+    stamp: (e, s) => diodeStamp(e, s, 1e-18, 2), post: (e, s) => diodePost(e, s, 1e-18, 2), info: (e, s) => twoInfo(e, s, e.st.i || 0)
+  },
+  Z: {
+    name: 'ツェナーダイオード', prefix: 'ZD', pins: P2, group: '半導体', nl: true, params: [{ k: 'Vz', label: 'ツェナー電圧', unit: 'V', def: 5.1 }],
+    stamp: (e, s) => diodeStamp(e, s, 1e-12, 1, Math.max(e.c.p.Vz, 0.5)), post: (e, s) => diodePost(e, s, 1e-12, 1, Math.max(e.c.p.Vz, 0.5)),
+    info: (e, s) => twoInfo(e, s, e.st.i || 0)
+  },
+  NPN: {
+    name: 'NPNトランジスタ', prefix: 'Q', pins: [[0, 0], [2, -1], [2, 1]], pinNames: ['B', 'C', 'E'], group: '半導体', nl: true, params: [],
+    stamp: (e, s) => {
+      const [nb, nc, ne] = e.n; const vb = s.v(nb), vc = s.v(nc), ve = s.v(ne);
+      const Is = 1e-14, bf = 100, br = 1, vcrit = VT * Math.log(VT / (Math.SQRT2 * Is));
+      const vbe = pnjlim(vb - ve, e.st.vbe || 0, VT, vcrit), vbc = pnjlim(vb - vc, e.st.vbc || 0, VT, vcrit);
+      e.st.vbe = vbe; e.st.vbc = vbc;
+      const ef = dexp(vbe / VT), er = dexp(vbc / VT), gf = Is * ef / VT, gr = Is * er / VT;
+      const Ic = Is * (ef - er) - Is / br * (er - 1), Ib = Is / bf * (ef - 1) + Is / br * (er - 1);
+      const dIc = [gf - gr - gr / br, gr + gr / br, -gf];
+      const dIb = [gf / bf + gr / br, -gr / br, -gf / bf];
+      const dIe = dIc.map((x, i) => -(x + dIb[i]));
+      const v0b = ve + vbe;
+      s.NL([nb, nc, ne], [Ib, Ic, -(Ib + Ic)], [dIb, dIc, dIe], [v0b, v0b - vbc, ve]);
+    },
+    post: (e, s) => {
+      const vb = pv(e, s, 0), vc = pv(e, s, 1), ve = pv(e, s, 2), Is = 1e-14;
+      const ef = dexp((vb - ve) / VT), er = dexp((vb - vc) / VT);
+      e.st.ic = Is * (ef - er) - Is * (er - 1); e.st.ib = Is / 100 * (ef - 1) + Is * (er - 1);
+    },
+    info: (e, s) => [['V(BE)', pv(e, s, 0) - pv(e, s, 2), 'V'], ['V(CE)', pv(e, s, 1) - pv(e, s, 2), 'V'], ['ベース電流', e.st.ib || 0, 'A'], ['コレクタ電流', e.st.ic || 0, 'A']]
+  },
+  OPAMP: {
+    name: 'オペアンプ', prefix: 'U', pins: [[0, 0], [0, 2], [4, 1], [2, -1], [2, 3]], pinNames: ['−入力', '+入力', '出力', 'V+', 'V−'], group: 'IC', nl: true, smooth: true, params: [],
+    stamp: (e, s) => s.NLfd(e, opampF),
+    info: (e, s) => [['+入力', pv(e, s, 1), 'V'], ['−入力', pv(e, s, 0), 'V'], ['出力', pv(e, s, 2), 'V'], ['電源 V+/V−', fmtSI(pv(e, s, 3), 'V') + ' / ' + fmtSI(pv(e, s, 4), 'V')]]
+  },
+  T555: {
+    name: '555タイマー', prefix: 'U', group: 'IC', norot: true, params: [],
+    pins: [[-1, 1], [-1, 2], [-1, 3], [5, 2], [1, -1], [3, -1], [1, 5], [3, 5]],
+    pinNames: ['DIS(7)', 'THR(6)', 'TRIG(2)', 'OUT(3)', 'VCC(8)', 'RESET(4)', 'GND(1)', 'CTRL(5)'],
+    init: e => { e.st.q = false; e.st.vcc = 0; e.st.vg = 0; },
+    stamp: (e, s) => {
+      const [dis, , , out, vcc, rst, gnd, ctrl] = e.n;
+      s.G(vcc, ctrl, 1 / 5000); s.G(ctrl, gnd, 1 / 10000); s.G(rst, vcc, 1 / 100000);
+      s.G(dis, gnd, e.st.q ? 1e-9 : 1 / 20);
+      const vrel = e.st.q ? Math.max(e.st.vcc - e.st.vg - 1.5, 0) : 0.1;
+      s.G(out, gnd, 1 / 10); s.I(gnd, out, vrel / 10);
+    },
+    post: (e, s) => {
+      const vg = pv(e, s, 6), vcc = pv(e, s, 4), vctrl = pv(e, s, 7) - vg;
+      const thr = pv(e, s, 1) - vg, trig = pv(e, s, 2) - vg, rst = pv(e, s, 5) - vg;
+      if (rst < 0.7) e.st.q = false; else if (trig < vctrl / 2) e.st.q = true; else if (thr > vctrl) e.st.q = false;
+      e.st.vcc = vcc; e.st.vg = vg;
+    },
+    info: (e, s) => [['内部FF', e.st.q ? 'セット（出力H）' : 'リセット（出力L）'], ['TRIG/THR', fmtSI(pv(e, s, 2), 'V') + ' / ' + fmtSI(pv(e, s, 1), 'V')], ['しきい値', fmtSI((pv(e, s, 7) - pv(e, s, 6)) / 2, 'V') + ' 〜 ' + fmtSI(pv(e, s, 7) - pv(e, s, 6), 'V')], ['出力', pv(e, s, 3), 'V']]
+  },
+  REG: {
+    name: '三端子レギュレータ 7805', prefix: 'U', pins: [[0, 0], [4, 0], [2, 2]], pinNames: ['IN', 'OUT', 'GND'], group: 'IC', norot: true, nl: true, smooth: true, params: [],
+    stamp: (e, s) => s.NLfd(e, regF),
+    info: (e, s) => [['入力', pv(e, s, 0) - pv(e, s, 2), 'V'], ['出力', pv(e, s, 1) - pv(e, s, 2), 'V']]
+  },
+  NOT: {
+    name: 'NOTゲート（74HC04）', prefix: 'U', pins: [[0, 0], [3, 0]], group: 'IC', params: [],
+    init: e => { e.st.q = true; }, stamp: gateOut, post: (e, s) => { e.st.q = pv(e, s, 0) < 2.5; },
+    info: (e, s) => [['入力', pv(e, s, 0), 'V'], ['出力', pv(e, s, 1), 'V']]
+  },
+  SCHMITT: {
+    name: 'シュミットNOT（74HC14）', prefix: 'U', pins: [[0, 0], [3, 0]], group: 'IC', params: [],
+    init: e => { e.st.q = true; }, stamp: gateOut,
+    post: (e, s) => { const v = pv(e, s, 0); if (v > 2.9) e.st.q = false; else if (v < 1.7) e.st.q = true; },
+    info: (e, s) => [['入力', pv(e, s, 0), 'V'], ['出力', pv(e, s, 1), 'V'], ['しきい値', '上昇時 2.9 V / 下降時 1.7 V']]
+  },
+  GATE: {
+    name: '論理ゲート', prefix: 'U', pins: [[0, 0], [0, 2], [4, 1]], group: 'IC',
+    params: [{ k: 'kind', label: '種類', options: ['AND', 'OR', 'NAND', 'NOR', 'XOR'], def: 'NAND' }],
+    init: e => { e.st.q = GATE_FN[e.c.p.kind](false, false); }, stamp: gateOut,
+    post: (e, s) => { e.st.q = GATE_FN[e.c.p.kind](pv(e, s, 0) > 2.5, pv(e, s, 1) > 2.5); },
+    info: (e, s) => [['入力A', pv(e, s, 0), 'V'], ['入力B', pv(e, s, 1), 'V'], ['出力', pv(e, s, 2), 'V']]
+  }
+};
+
+function pinPos(c) {
+  return TYPES[c.t].pins.map(([px, py]) => { const [a, b] = rotPt(px, py, c.r || 0); return [c.x + a, c.y + b]; });
+}
+function onInterior(x, y, w) {
+  if (w.x1 === w.x2) return x === w.x1 && y > Math.min(w.y1, w.y2) && y < Math.max(w.y1, w.y2);
+  if (w.y1 === w.y2) return y === w.y1 && x > Math.min(w.x1, w.x2) && x < Math.max(w.x1, w.x2);
+  return false;
+}
+
+function buildNets(circ) {
+  const par = new Map();
+  const add = k => { if (!par.has(k)) par.set(k, k); };
+  const find = k => { let r = k; while (par.get(r) !== r) r = par.get(r); let c = k; while (par.get(c) !== r) { const n = par.get(c); par.set(c, r); c = n; } return r; };
+  const uni = (a, b) => { a = find(a); b = find(b); if (a !== b) par.set(a, b); };
+  for (const w of circ.wires) { const a = key(w.x1, w.y1), b = key(w.x2, w.y2); add(a); add(b); uni(a, b); }
+  const pinsOf = new Map();
+  for (const c of circ.comps) { const ps = pinPos(c); pinsOf.set(c.id, ps); ps.forEach(([x, y]) => add(key(x, y))); }
+  for (const k of [...par.keys()]) {
+    const [x, y] = k.split(',').map(Number);
+    for (const w of circ.wires) if (onInterior(x, y, w)) uni(k, key(w.x1, w.y1));
+  }
+  const gk = circ.comps.filter(c => c.t === 'GND').map(c => key(...pinsOf.get(c.id)[0]));
+  for (let i = 1; i < gk.length; i++) uni(gk[i], gk[0]);
+  const gr = gk.length ? find(gk[0]) : null;
+  const id = new Map(); let n = 1;
+  const pointNet = new Map();
+  for (const k of par.keys()) {
+    const r = find(k); let v;
+    if (r === gr) v = 0; else { if (!id.has(r)) id.set(r, n++); v = id.get(r); }
+    pointNet.set(k, v);
+  }
+  const compNets = new Map();
+  for (const c of circ.comps) compNets.set(c.id, pinsOf.get(c.id).map(([x, y]) => pointNet.get(key(x, y))));
+  return { pointNet, compNets, nNets: n, hasGround: gr !== null };
+}
+
+function solveLin(A, b, n) {
+  for (let k = 0; k < n; k++) {
+    let p = k, mx = Math.abs(A[k * n + k]);
+    for (let i = k + 1; i < n; i++) { const v = Math.abs(A[i * n + k]); if (v > mx) { mx = v; p = i; } }
+    if (mx < 1e-15) return null;
+    if (p !== k) {
+      for (let j = 0; j < n; j++) { const t = A[k * n + j]; A[k * n + j] = A[p * n + j]; A[p * n + j] = t; }
+      const t = b[k]; b[k] = b[p]; b[p] = t;
+    }
+    const piv = A[k * n + k];
+    for (let i = k + 1; i < n; i++) {
+      const f = A[i * n + k] / piv; if (f === 0) continue;
+      for (let j = k; j < n; j++) A[i * n + j] -= f * A[k * n + j];
+      b[i] -= f * b[k];
+    }
+  }
+  const x = new Float64Array(n);
+  for (let i = n - 1; i >= 0; i--) { let s = b[i]; for (let j = i + 1; j < n; j++) s -= A[i * n + j] * x[j]; x[i] = s / A[i * n + i]; }
+  return x;
+}
+
+class Sim {
+  constructor(circ, dt) {
+    this.dt = dt; this.t = 0; this.t1 = 0; this.err = null; this.slow = 0;
+    const nets = buildNets(circ); this.nets = nets; this.N = nets.nNets;
+    this.els = []; let nb = 0; this.nonlin = false; this.smooth = false;
+    for (const c of circ.comps) {
+      const T = TYPES[c.t]; const e = { c, n: nets.compNets.get(c.id), st: {}, br: -1 };
+      if (T.branch) e.br = nb++;
+      if (T.nl) this.nonlin = true; if (T.smooth) this.smooth = true;
+      if (T.init) T.init(e);
+      this.els.push(e);
+    }
+    this.nb = nb; this.size = this.N - 1 + nb;
+    this.x = new Float64Array(this.size);
+    this.A = new Float64Array(this.size * this.size); this.b = new Float64Array(this.size);
+    this.byId = new Map(this.els.map(e => [e.c.id, e]));
+  }
+  v(n) { return n ? this.x[n - 1] : 0; }
+  ib(br) { return this.x[this.N - 1 + br]; }
+  netAt(x, y) { const n = this.nets.pointNet.get(key(x, y)); return n === undefined ? -1 : n; }
+  G(a, b, g) { const S = this.size, A = this.A; if (a) A[(a - 1) * S + a - 1] += g; if (b) A[(b - 1) * S + b - 1] += g; if (a && b) { A[(a - 1) * S + b - 1] -= g; A[(b - 1) * S + a - 1] -= g; } }
+  I(a, b, i) { if (a) this.b[a - 1] -= i; if (b) this.b[b - 1] += i; }
+  Vs(br, a, b, v) { const S = this.size, r = this.N - 1 + br, A = this.A; if (a) { A[(a - 1) * S + r] += 1; A[r * S + a - 1] += 1; } if (b) { A[(b - 1) * S + r] -= 1; A[r * S + b - 1] -= 1; } this.b[r] = v; }
+  NL2(a, b, I, g, v0) { const r = I - g * v0; this.G(a, b, g); this.I(a, b, r); }
+  NL(nodes, I0, J, v0) {
+    const S = this.size, A = this.A, m = nodes.length;
+    for (let k = 0; k < m; k++) {
+      const nk = nodes[k]; if (!nk) continue;
+      let rhs = I0[k];
+      for (let j = 0; j < m; j++) { const nj = nodes[j]; rhs -= J[k][j] * v0[j]; if (nj) A[(nk - 1) * S + nj - 1] += J[k][j]; }
+      this.b[nk - 1] -= rhs;
+    }
+  }
+  NLfd(e, fn) {
+    const vs = e.n.map(n => this.v(n)), I0 = fn(vs), m = vs.length, J = [];
+    for (let k = 0; k < m; k++) J.push(new Array(m));
+    for (let j = 0; j < m; j++) { const vv = vs.slice(); vv[j] += 1e-6; const I1 = fn(vv); for (let k = 0; k < m; k++) J[k][j] = (I1[k] - I0[k]) / 1e-6; }
+    this.NL(e.n, I0, J, vs);
+  }
+  step() {
+    const S = this.size, A = this.A, b = this.b;
+    this.t1 = this.t + this.dt;
+    if (S === 0) { this.t = this.t1; return true; }
+    const maxIt = this.nonlin ? 80 : 1;
+    let conv = false;
+    for (let it = 0; it < maxIt; it++) {
+      A.fill(0); b.fill(0);
+      for (let i = 0; i < this.N - 1; i++) A[i * S + i] += GMIN;
+      for (const e of this.els) { const f = TYPES[e.c.t].stamp; if (f) f(e, this); }
+      const xn = solveLin(A, b, S);
+      if (!xn) { this.err = '回路を計算できません。電圧源どうしが直接つながっていないか、電源の両端がショートしていないか確認してください。'; return false; }
+      if (!this.nonlin) { this.x.set(xn); conv = true; break; }
+      let maxd = 0, ok = true;
+      for (let i = 0; i < this.N - 1; i++) { const d = Math.abs(xn[i] - this.x[i]); if (d > maxd) maxd = d; if (d > 1e-6 + 1e-6 * Math.abs(xn[i])) ok = false; }
+      if (!isFinite(maxd)) { this.err = '計算が発散しました。部品の値を確認してください。'; return false; }
+      if (this.smooth && maxd > 3) { const k = 3 / maxd; for (let i = 0; i < S; i++) this.x[i] += (xn[i] - this.x[i]) * k; ok = false; }
+      else this.x.set(xn);
+      if (ok) { conv = true; break; }
+    }
+    if (!conv) this.slow++;
+    this.t = this.t1;
+    for (const e of this.els) { const f = TYPES[e.c.t].post; if (f) f(e, this); }
+    return true;
+  }
+}
+
+/* ---- 回路データ ---- */
+function defaultsOf(t) { const T = TYPES[t]; const p = Object.assign({}, T.pdef || {}); (T.params || []).forEach(q => p[q.k] = q.def); return p; }
+function assignLabel(circ, c) {
+  const T = TYPES[c.t]; if (T.nolabel) { c.label = ''; return; }
+  const used = new Set(circ.comps.map(x => x.label));
+  let i = 1; while (used.has(T.prefix + i)) i++;
+  c.label = T.prefix + i;
+}
+function makeCirc(pd) {
+  const circ = { comps: [], wires: [], probes: [], nextId: 1 };
+  for (const [t, x, y, r, p] of pd.comps) {
+    const c = { id: circ.nextId++, t, x, y, r: r || 0, p: Object.assign(defaultsOf(t), p || {}) };
+    assignLabel(circ, c); circ.comps.push(c);
+  }
+  for (const path of pd.wires) for (let i = 0; i + 1 < path.length; i++) {
+    const [x1, y1] = path[i], [x2, y2] = path[i + 1];
+    circ.wires.push({ id: circ.nextId++, x1, y1, x2, y2 });
+  }
+  circ.probes = (pd.probes || []).map(([x, y, name]) => ({ x, y, name }));
+  return circ;
+}
+
+if (false) module.exports = { TYPES, Sim, makeCirc, buildNets, fmtSI, parseSI, pinPos };
+
+/* ===== 回路パターン集 ===== */
+const PATTERNS = [
+  {
+    id: 'divider', name: '分圧回路', cat: '基本', dt: 1e-4, win: 0.01,
+    summary: '2本の抵抗で電圧を好きな比率に分ける、いちばん基本の回路。',
+    role: '電源電圧を抵抗の比で分けて、低い電圧を取り出します。センサーの読み取り、基準電圧づくり、トランジスタのバイアスなど、あらゆる回路の土台になります。',
+    steps: [
+      'V1（9 V）から R1 → R2 → GND へ同じ電流が流れます。I = 9 V ÷（R1 + R2）= 0.45 mA。',
+      '各抵抗にかかる電圧は「電流 × 抵抗値」。抵抗が大きい方に大きな電圧がかかります。',
+      'R1 と R2 の間（Vout）の電圧は Vout = Vin × R2 ÷（R1 + R2）。いまは同じ 10 kΩ なのでちょうど半分の 4.5 V です。'
+    ],
+    watch: 'CH1（Vin）と CH2（Vout）はどちらも一定の直線です。直流回路なので時間で変化しません。',
+    tries: ['R2 を 4.7 kΩ にすると Vout は約 2.88 V に下がります。', 'Vout に 1 kΩ の負荷抵抗をつなぐと電圧が大きく下がります。分圧回路は重い負荷に弱いことが分かります。'],
+    comps: [['V', 0, 2, 1, { V: 9 }], ['R', 6, 1, 1, { R: 10000 }], ['R', 6, 3, 1, { R: 10000 }], ['GND', 3, 5, 0]],
+    wires: [[[0, 2], [0, 1], [6, 1]], [[0, 4], [0, 5], [6, 5]], [[6, 3], [8, 3]]],
+    probes: [[0, 1, 'Vin'], [8, 3, 'Vout']]
+  },
+  {
+    id: 'led', name: 'LED点灯回路', cat: '基本', dt: 1e-4, win: 0.02,
+    summary: '電流制限抵抗でLEDを安全に光らせる。スイッチで点灯・消灯。',
+    role: 'LEDは電圧を少し上げるだけで電流が急増して壊れるため、直列に抵抗を入れて電流を決めます。電子工作で最初に作る回路です。',
+    steps: [
+      'SW1 をタップして ON にすると、V1 → SW1 → R1 → LED1 → GND と電流が流れます。',
+      'LEDの両端は約 1.9 V でほぼ一定（順方向電圧 Vf）。残りの 5 − 1.9 = 3.1 V が R1 にかかります。',
+      '電流は I = 3.1 V ÷ 330 Ω ≒ 9.4 mA。赤色LEDの標準的な電流（5〜20 mA）に収まっています。'
+    ],
+    watch: 'SW1 を切り替えると CH1（LEDのアノード電圧）が 0 V と約 1.9 V の間で変わります。LEDの周りが光ります。',
+    tries: ['R1 を 1 kΩ にすると暗く、150 Ω にすると明るくなります。', '抵抗の値は R =（電源電圧 − Vf）÷ 流したい電流 で求めます。'],
+    comps: [['V', 0, 2, 1, { V: 5 }], ['SW', 2, 1, 0, { on: true }], ['R', 5, 1, 0, { R: 330 }], ['LED', 9, 2, 1], ['GND', 3, 5, 0]],
+    wires: [[[0, 2], [0, 1], [2, 1]], [[4, 1], [5, 1]], [[7, 1], [9, 1], [9, 2]], [[0, 4], [0, 5], [9, 5], [9, 4]]],
+    probes: [[9, 1, 'LED']]
+  },
+  {
+    id: 'rc', name: 'RC充放電回路', cat: '基本', dt: 5e-5, win: 0.2,
+    summary: 'コンデンサがゆっくり充電・放電する様子を見る。時定数 τ = RC。',
+    role: 'コンデンサは電圧が急に変われません。抵抗を通して充電すると指数関数的にゆっくり電圧が上がります。タイマー、遅延、ノイズ除去の基本原理です。',
+    steps: [
+      'V1 は 5 V と 0 V を 20 Hz で繰り返します。',
+      '5 V になった瞬間、C1 は空なので R1 に 5 V がかかり大きな電流が流れ込みます。',
+      'C1 の電圧が上がるほど R1 にかかる電圧が減り、充電はだんだん遅くなります。τ = R1 × C1 = 10 ms で約 63 % まで充電。',
+      'V1 が 0 V になると、今度は C1 の電荷が R1 を通って放電し、同じ曲線で下がります。'
+    ],
+    watch: 'CH1（入力）は四角い波形、CH2（Vc）は角が丸くなったカーブ。1τ で 63 %、3τ で 95 % まで達します。',
+    tries: ['C1 を 1 µF にすると τ = 1 ms になり、ほぼ四角に追従します。', 'C1 を 47 µF にすると充電しきれず、三角波に近くなります。'],
+    comps: [['SQ', 0, 2, 1, { hi: 5, lo: 0, f: 20 }], ['R', 2, 1, 0, { R: 1000 }], ['C', 6, 2, 1, { C: 10e-6 }], ['GND', 3, 5, 0]],
+    wires: [[[0, 2], [0, 1], [2, 1]], [[4, 1], [6, 1], [6, 2]], [[0, 4], [0, 5], [6, 5], [6, 4]]],
+    probes: [[0, 1, 'Vin'], [6, 1, 'Vc']]
+  },
+  {
+    id: 'lpf', name: 'RCローパスフィルタ', cat: 'フィルタ', dt: 5e-6, win: 0.005,
+    summary: '低い周波数は通し、高い周波数を弱める。カットオフ周波数は約 1 kHz。',
+    role: 'オーディオのノイズ除去、PWM信号の平滑化、センサー信号の安定化などに使います。抵抗1本とコンデンサ1個でできる最もシンプルなフィルタです。',
+    steps: [
+      'コンデンサの交流に対する抵抗（リアクタンス）は Xc = 1 ÷（2πfC）。周波数が高いほど小さくなります。',
+      '周波数が低いと C1 はほぼ「開放」なので、入力がそのまま出力に出ます。',
+      '周波数が高いと C1 が信号を GND へ逃がすため、出力が小さくなります。',
+      'カットオフ周波数 fc = 1 ÷（2π × R1 × C1）≒ 995 Hz。いまの入力 1 kHz では振幅が約 0.7 倍、位相が約 45° 遅れます。'
+    ],
+    watch: 'CH2（Vout）は CH1 より小さく、少し右（遅れ）にずれています。',
+    tries: ['V1 の周波数を 100 Hz にするとほぼそのまま通ります。', '10 kHz にすると出力は約 1/10 まで小さくなります。'],
+    comps: [['AC', 0, 2, 1, { A: 1, f: 1000 }], ['R', 2, 1, 0, { R: 1600 }], ['C', 6, 2, 1, { C: 100e-9 }], ['GND', 3, 5, 0]],
+    wires: [[[0, 2], [0, 1], [2, 1]], [[4, 1], [8, 1]], [[6, 1], [6, 2]], [[0, 4], [0, 5], [6, 5], [6, 4]]],
+    probes: [[0, 1, 'Vin'], [8, 1, 'Vout']]
+  },
+  {
+    id: 'rlc', name: 'RLC直列共振', cat: 'フィルタ', dt: 2e-6, win: 0.01,
+    summary: 'コイルとコンデンサがエネルギーをやり取りして振動する。',
+    role: 'LとCの組み合わせは特定の周波数（共振周波数）で振動します。ラジオの選局、発振回路、ワイヤレス給電などの心臓部です。',
+    steps: [
+      '方形波が 5 V に立ち上がると、L1 を通して C1 が充電され始めます。',
+      'コイルは電流の変化を嫌うため、C1 が 5 V に達しても電流が流れ続け、行き過ぎ（オーバーシュート）ます。',
+      '行き過ぎた C1 が今度は L1 へ電流を押し戻し、電圧が上下に振動します。',
+      '振動の周波数は f0 = 1 ÷（2π√(LC)）≒ 1.6 kHz。R1 がエネルギーを熱に変えるので、振動は少しずつ小さくなります。'
+    ],
+    watch: 'CH2（Vc）が方形波の切り替わりのたびにリンギング（減衰振動）します。',
+    tries: ['R1 を 100 Ω にすると振動がすぐ収まります（減衰が強い）。', 'R1 を 5 Ω にすると長く振動が続きます。', 'C1 を 4.7 µF にすると振動の周波数が下がります。'],
+    comps: [['SQ', 0, 2, 1, { hi: 5, lo: 0, f: 100 }], ['R', 2, 1, 0, { R: 20 }], ['L', 5, 1, 0, { L: 10e-3 }], ['C', 9, 2, 1, { C: 1e-6 }], ['GND', 3, 5, 0]],
+    wires: [[[0, 2], [0, 1], [2, 1]], [[4, 1], [5, 1]], [[7, 1], [9, 1], [9, 2]], [[0, 4], [0, 5], [9, 5], [9, 4]]],
+    probes: [[0, 1, 'Vin'], [9, 1, 'Vc']]
+  },
+  {
+    id: 'halfwave', name: '半波整流＋平滑回路', cat: '電源', dt: 2e-5, win: 0.1,
+    summary: '交流をダイオードで直流に変え、コンデンサで平らにする。',
+    role: 'ACアダプタや電源回路の基本形です。交流の「プラス側だけ」を取り出し、コンデンサに貯めて直流に近づけます。',
+    steps: [
+      '交流の電圧がプラスのとき、D1 が導通して C1 を充電します（ピーク値 − 約 0.7 V まで）。',
+      '交流がマイナスのとき、D1 は電流を止めます（逆止弁の働き）。',
+      'その間は C1 に貯めた電荷が負荷 R1 に流れ、電圧が少しずつ下がります。',
+      '次のプラスの山でまた充電。この上下の揺れを「リップル」と呼びます。'
+    ],
+    watch: 'CH1 は正弦波、CH2 はノコギリ状のほぼ直流。リップルは 1 周期（20 ms）ごとに現れます。',
+    tries: ['C1 を 1000 µF にするとリップルが小さくなります。', 'R1 を 100 Ω（重い負荷）にするとリップルが大きくなります。', 'C1 を消すと、半分だけの正弦波（脈流）になります。'],
+    comps: [['AC', 0, 2, 1, { A: 10, f: 50 }], ['D', 2, 1, 0], ['C', 6, 2, 1, { C: 470e-6 }], ['R', 9, 2, 1, { R: 1000 }], ['GND', 3, 5, 0]],
+    wires: [[[0, 2], [0, 1], [2, 1]], [[4, 1], [9, 1], [9, 2]], [[6, 1], [6, 2]], [[0, 4], [0, 5], [9, 5], [9, 4]], [[6, 4], [6, 5]]],
+    probes: [[0, 1, 'Vin'], [9, 1, 'Vout']]
+  },
+  {
+    id: 'bridge', name: 'ブリッジ全波整流', cat: '電源', dt: 2e-5, win: 0.1,
+    summary: '4つのダイオードで交流の両側を使う。リップルの周期が半分に。',
+    role: '交流のプラス側もマイナス側も向きをそろえて取り出すので、半波整流より効率が良くリップルも小さくなります。ほとんどの電源で使われる形です。',
+    steps: [
+      'A点がB点より高いとき：電流は A → D1 → 出力（+）→ R1 → GND → D4 → B と流れます。',
+      'B点がA点より高いとき：電流は B → D2 → 出力（+）→ R1 → GND → D3 → A と流れます。',
+      'どちらの半周期でも R1 には同じ向きに電流が流れます。',
+      '電流は必ず 2 個のダイオードを通るので、出力はピークより約 1.4 V 低くなります。'
+    ],
+    watch: 'CH1（出力）のリップルは 100 Hz（10 ms ごと）。半波整流の 2 倍の頻度で充電されます。',
+    tries: ['C1 を消すと、正弦波の山が全部プラス側にそろった波形（全波整流波形）が見えます。'],
+    comps: [['D', 4, 2, 3], ['D', 8, 2, 3], ['D', 4, 6, 3], ['D', 8, 6, 3], ['AC', 5, 3, 0, { A: 12, f: 50 }], ['C', 11, 2, 1, { C: 220e-6 }], ['R', 14, 2, 1, { R: 1000 }], ['GND', 12, 6, 0]],
+    wires: [[[4, 2], [4, 4]], [[8, 2], [8, 4]], [[4, 3], [5, 3]], [[7, 3], [8, 3]], [[4, 0], [14, 0]], [[4, 6], [14, 6]], [[11, 0], [11, 2]], [[11, 4], [11, 6]], [[14, 0], [14, 2]], [[14, 4], [14, 6]]],
+    probes: [[14, 0, 'Vout'], [4, 3, 'A点']]
+  },
+  {
+    id: 'cw', name: 'コッククロフト・ウォルトン回路', cat: '電源', dt: 5e-6, win: 0.03,
+    summary: 'ダイオードとコンデンサのはしごで電圧を何倍にも上げる（ここでは4倍）。',
+    role: '変圧器なしで高電圧を作る回路です。粒子加速器（1932年、コッククロフトとウォルトンが原子核の人工変換に使用）、コピー機、イオン発生器、ブラウン管、空気清浄機などで使われます。',
+    steps: [
+      '交流がマイナスの半周期：D1 が導通し、C1 が入力の振幅（約 10 V）まで充電されます。',
+      'プラスの半周期：入力の 10 V に C1 の 10 V が上乗せされ、a1点は約 20 V に。D2 を通して C2 が 20 V に充電されます。',
+      '次のマイナスの半周期：a1点は 0 V 付近に戻り、C2 の 20 V で D3 を通して C3 が充電されます。',
+      'これを繰り返すと C4 の上（Vout）は振幅の約 4 倍（40 V − ダイオード降下分）まで上がります。段を増やせば何倍にもできます。'
+    ],
+    watch: 'CH1（入力）は ±10 V の正弦波。CH2（a1点）は 0〜20 V で上下に揺れる波、CH4（Vout）は階段状にじわじわ上昇して約 37 V で落ち着きます。',
+    tries: ['R1（負荷）を 10 kΩ にすると出力が大きく下がります。高電圧は作れても大きな電流は取り出せません。', 'コンデンサを 10 µF にすると上昇はゆっくりですが、負荷に強くなります。'],
+    comps: [['AC', -1, 2, 1, { A: 10, f: 1000 }], ['C', 1, 0, 0, { C: 1e-6 }], ['D', 4, 4, 3], ['C', 5, 6, 0, { C: 1e-6 }], ['D', 8, 2, 1], ['C', 9, 0, 0, { C: 1e-6 }], ['D', 12, 4, 3], ['C', 13, 6, 0, { C: 1e-6 }], ['D', 16, 2, 1], ['R', 18, 6, 1, { R: 1e6 }], ['GND', 1, 6, 0], ['GND', 18, 8, 0]],
+    wires: [[[-1, 2], [-1, 0], [1, 0]], [[-1, 4], [-1, 6], [4, 6]], [[3, 0], [8, 0]], [[4, 2], [4, 0]], [[4, 4], [4, 6]], [[4, 6], [5, 6]], [[8, 0], [8, 2]], [[8, 0], [9, 0]], [[7, 6], [13, 6]], [[8, 4], [8, 6]], [[12, 4], [12, 6]], [[11, 0], [16, 0]], [[12, 2], [12, 0]], [[16, 0], [16, 2]], [[15, 6], [18, 6]], [[16, 4], [16, 6]]],
+    probes: [[-1, 0, 'Vin'], [4, 0, 'a1'], [8, 6, 'b1'], [16, 6, 'Vout']]
+  },
+  {
+    id: 'zener', name: 'ツェナー定電圧回路', cat: '電源', dt: 1e-4, win: 0.02,
+    summary: 'ツェナーダイオードで一定の電圧（5.1 V）を作る。',
+    role: '入力電圧が変わっても、出力をほぼ一定に保つ簡単な安定化電源です。基準電圧づくりや、入力保護にも使います。',
+    steps: [
+      'ツェナーダイオード ZD1 は逆向きに 5.1 V 以上かかると急に電流を流し、電圧をそれ以上上げません。',
+      '入力 12 V と出力 5.1 V の差（6.9 V）は R1 が引き受けます。',
+      'R1 を流れる電流（約 14.7 mA）は、負荷 R2 と ZD1 に分かれます。負荷が変わると ZD1 の電流が変わって電圧を保ちます。'
+    ],
+    watch: 'CH1（Vout）は約 5.1 V で一定です。',
+    tries: ['V1 を 9 V や 15 V に変えても、出力はほぼ 5.1 V のままです。', 'R2 を 220 Ω にすると電流が足りなくなり、出力が下がります。'],
+    comps: [['V', 0, 2, 1, { V: 12 }], ['R', 2, 1, 0, { R: 470 }], ['Z', 5, 4, 3, { Vz: 5.1 }], ['R', 8, 2, 1, { R: 1000 }], ['GND', 3, 5, 0]],
+    wires: [[[0, 2], [0, 1], [2, 1]], [[4, 1], [8, 1], [8, 2]], [[5, 1], [5, 2]], [[0, 4], [0, 5], [8, 5], [8, 4]], [[5, 4], [5, 5]]],
+    probes: [[8, 1, 'Vout']]
+  },
+  {
+    id: 'reg', name: '三端子レギュレータ電源', cat: '電源', dt: 5e-5, win: 0.1,
+    summary: '整流した電圧を 7805 で正確な 5 V に安定化する。',
+    role: 'マイコンやロジックICに使う 5 V 電源の定番構成です。整流・平滑で作った「揺れる直流」を、レギュレータがきれいな直流に整えます。',
+    steps: [
+      'AC を D1 で半波整流し、C1 で平滑します（リップル付きの約 9〜11 V）。',
+      '7805 は出力が 5 V になるように内部で電圧を調整し、余った電圧は熱にします。',
+      '入力が 7 V（5 V + 約 2 V）以上ある限り、出力は 5 V で一定です。',
+      'C2 は出力を安定させ、負荷の急変に備えるコンデンサです。'
+    ],
+    watch: 'CH2（7805の入力）はノコギリ状に揺れますが、CH3（Vout）は 5 V の直線になります。',
+    tries: ['C1 を 100 µF にするとリップルの谷が 7 V を下回り、出力にも揺れが出ます（ドロップアウト）。', 'R1 を 47 Ω にすると電流が増えてリップルが大きくなります。'],
+    comps: [['AC', 0, 2, 1, { A: 12, f: 50 }], ['D', 2, 1, 0], ['C', 6, 2, 1, { C: 470e-6 }], ['REG', 7, 1, 0], ['C', 12, 2, 1, { C: 10e-6 }], ['R', 14, 2, 1, { R: 100 }], ['GND', 3, 5, 0]],
+    wires: [[[0, 2], [0, 1], [2, 1]], [[4, 1], [7, 1]], [[6, 1], [6, 2]], [[11, 1], [14, 1], [14, 2]], [[12, 1], [12, 2]], [[0, 4], [0, 5], [14, 5], [14, 4]], [[6, 4], [6, 5]], [[9, 3], [9, 5]], [[12, 4], [12, 5]]],
+    probes: [[0, 1, 'Vac'], [7, 1, 'Vin'], [14, 1, 'Vout']]
+  },
+  {
+    id: 'trsw', name: 'トランジスタスイッチ', cat: 'トランジスタ', dt: 1e-4, win: 2,
+    summary: '小さなベース電流で、大きなLED電流をON/OFFする。',
+    role: 'マイコンの弱い出力でモーターやLED、リレーなど大きな電流の負荷を動かすときに使います。トランジスタを「電子のスイッチ」として使う基本回路です。',
+    steps: [
+      'V2（方形波 0/5 V、2 Hz）が 5 V のとき、R1 を通してベースに約 0.43 mA 流れます。',
+      'トランジスタは hFE（約 100）倍のコレクタ電流を流そうとしますが、LEDとR2で制限されて飽和（完全ON）状態になります。',
+      'V(CE) がほぼ 0 V になり、VCC → R2 → LED1 → Q1 → GND と電流が流れて LED が点きます。',
+      'V2 が 0 V になるとベース電流が止まり、Q1 はOFF。LEDが消えます。'
+    ],
+    watch: 'CH1（ベース側入力）が H のとき CH2（コレクタ）は 0.1 V 付近まで下がります。入力と出力が反転しているのが分かります。',
+    tries: ['R1 を 1 MΩ にするとベース電流が足りず、LEDが暗くなります（不完全なON）。', 'V2 の周波数を 10 Hz にすると速く点滅します。'],
+    comps: [['SQ', 0, 4, 1, { hi: 5, lo: 0, f: 2 }], ['R', 1, 3, 0, { R: 10000 }], ['NPN', 4, 3, 0], ['LED', 6, 0, 1], ['R', 6, -2, 1, { R: 330 }], ['V', 12, 1, 1, { V: 5 }], ['GND', 3, 7, 0]],
+    wires: [[[0, 4], [0, 3], [1, 3]], [[3, 3], [4, 3]], [[0, 6], [0, 7], [12, 7]], [[6, 4], [6, 7]], [[12, 3], [12, 7]], [[6, -2], [12, -2], [12, 1]]],
+    probes: [[0, 3, 'Vin'], [6, 2, 'Vc']]
+  },
+  {
+    id: 'inv', name: 'オペアンプ反転増幅', cat: 'オペアンプ', dt: 5e-6, win: 0.003,
+    summary: '入力を −3 倍に増幅する。増幅率は抵抗の比だけで決まる。',
+    role: 'マイクやセンサーの小さな信号を大きくする増幅回路の基本形です。増幅率が部品のばらつきに左右されず、抵抗2本で正確に決まるのが特長です。',
+    steps: [
+      '+入力は GND（0 V）。オペアンプは「2つの入力の電圧を等しくしよう」と出力を調整します（仮想短絡）。',
+      'そのため −入力も常に約 0 V。R1 を流れる電流は Vin ÷ R1 になります。',
+      'オペアンプの入力には電流が流れないので、同じ電流がそのまま R2 を流れます。',
+      '出力は Vout = −Vin × R2 ÷ R1 = −3 × Vin。入力がプラスだと出力はマイナスになります（反転）。'
+    ],
+    watch: 'CH1（±1 V）に対し、CH2 は ±3 V で上下が逆の波形です。',
+    tries: ['R2 を 150 kΩ にすると増幅率 −15。出力が電源（±12 V）を超えようとして頭が平らに切れます（クリップ）。', 'V1 の振幅を 5 V にしてもクリップします。'],
+    comps: [['OPAMP', 6, 2, 0], ['R', 3, 2, 0, { R: 10000 }], ['R', 6, -2, 0, { R: 30000 }], ['AC', 0, 3, 1, { A: 1, f: 1000 }], ['RAIL', 8, 0, 0, { V: 12 }], ['RAIL', 8, 6, 2, { V: -12 }], ['GND', 6, 5, 0], ['GND', 0, 5, 0]],
+    wires: [[[0, 3], [0, 2], [3, 2]], [[5, 2], [6, 2]], [[5, 2], [5, -2], [6, -2]], [[8, -2], [11, -2], [11, 3]], [[10, 3], [13, 3]], [[8, 0], [8, 1]], [[8, 5], [8, 6]], [[6, 4], [6, 5]]],
+    probes: [[0, 2, 'Vin'], [13, 3, 'Vout']]
+  },
+  {
+    id: 'comp', name: 'コンパレータ（電圧比較）', cat: 'オペアンプ', dt: 2e-5, win: 0.05,
+    summary: '入力が基準電圧より高いか低いかで、出力を H / L に切り替える。',
+    role: '温度や明るさが一定値を超えたら知らせる、アナログ信号をデジタル信号に変える、といった「判定」に使います。オペアンプを帰還なしで使うと巨大な増幅率でこの動作になります。',
+    steps: [
+      'R1 と R2 の分圧で −入力に 2.0 V の基準電圧を作ります。',
+      '+入力には 0.5〜4.5 V で揺れる正弦波を入れます。',
+      '+入力 ＞ 基準電圧なら、差が 10 万倍に増幅されて出力は上限（約 4.9 V）に張り付きます。',
+      '+入力 ＜ 基準電圧なら、出力は下限（約 0.1 V）に張り付きます。'
+    ],
+    watch: 'CH1（入力）が CH2（基準 2 V）を上回っている間だけ、CH3（出力）が H になります。',
+    tries: ['R1 を 10 kΩ にすると基準が 2.5 V になり、H と L の時間が等しくなります。', 'R1 を 40 kΩ（基準 1 V）にすると H の時間が長くなります。'],
+    comps: [['OPAMP', 6, 2, 0], ['RAIL', 3, 0, 0, { V: 5 }], ['R', 3, 0, 1, { R: 15000 }], ['R', 3, 2, 1, { R: 10000 }], ['GND', 3, 4, 0], ['AC', 0, 6, 1, { A: 2, f: 50, off: 2.5 }], ['GND', 0, 8, 0], ['RAIL', 8, 0, 0, { V: 5 }], ['GND', 8, 6, 0]],
+    wires: [[[6, 2], [3, 2]], [[6, 4], [5, 4], [5, 6], [0, 6]], [[8, 0], [8, 1]], [[8, 5], [8, 6]], [[10, 3], [12, 3]]],
+    probes: [[0, 6, 'Vin'], [3, 2, 'Vref'], [12, 3, 'Vout']]
+  },
+  {
+    id: 'astable', name: '555 無安定マルチバイブレータ', cat: 'IC', dt: 2e-4, win: 3,
+    summary: '555タイマーでLEDを約1.4 Hzで点滅させる定番回路。',
+    role: 'クロック信号、LEDの点滅、ブザーの発音、PWMなど、一定周期のパルスを作る回路です。555は1972年発売以来、今も使われ続けている名作ICです。',
+    steps: [
+      '最初 C1 は 0 V。TRIG が VCC の 1/3（約 1.67 V）より低いので内部FFがセットされ、OUT が H、放電端子 DIS は開放になります。',
+      'C1 は R1 + R2 を通って充電され、電圧が上がっていきます。',
+      'THR が VCC の 2/3（約 3.33 V）を超えると FF がリセット。OUT が L になり、DIS が GND とつながります。',
+      'C1 は R2 を通して DIS へ放電。1/3 VCC まで下がると再びセット ― これを繰り返します。',
+      '周期は T ≒ 0.693 ×（R1 + 2×R2）× C1 ≒ 0.72 秒。'
+    ],
+    watch: 'CH1（C1の電圧）は 1.67〜3.33 V の間をのこぎり状に往復し、CH2（OUT）は四角いパルスになります。',
+    tries: ['C1 を 1 µF にすると 10 倍速く点滅します。', 'R1 を 100 kΩ にすると H の時間が長くなります（デューティ比が変わる）。'],
+    comps: [['T555', 4, 2, 0], ['RAIL', 1, -1, 0, { V: 5 }], ['R', 1, -1, 1, { R: 10000 }], ['R', 1, 3, 1, { R: 47000 }], ['C', 1, 6, 1, { C: 10e-6 }], ['GND', 1, 8, 0], ['GND', 5, 8, 0], ['C', 7, 7, 1, { C: 10e-9 }], ['GND', 7, 9, 0], ['R', 11, 4, 1, { R: 330 }], ['LED', 11, 6, 1], ['GND', 11, 8, 0]],
+    wires: [[[1, -1], [7, -1]], [[5, 1], [5, -1]], [[7, 1], [7, -1]], [[1, 1], [1, 3], [3, 3]], [[1, 5], [3, 5]], [[3, 4], [3, 5]], [[1, 5], [1, 6]], [[5, 7], [5, 8]], [[9, 4], [11, 4]]],
+    probes: [[1, 5, 'Vc'], [9, 4, 'OUT']]
+  },
+  {
+    id: 'schmitt', name: 'シュミットトリガ発振回路', cat: 'IC', dt: 1e-5, win: 0.05,
+    summary: '74HC14 と R・C 各1個だけで作る、いちばん簡単な発振器。',
+    role: 'マイコンのクロック代わり、ブザーやLEDの駆動など、手軽に方形波を作りたいときに使います。シュミットトリガのヒステリシス（2つのしきい値）が発振の鍵です。',
+    steps: [
+      '最初 C1 は 0 V。入力が L なので出力は H（5 V）。R1 を通して C1 が充電されます。',
+      'C1 が上側しきい値 2.9 V を超えると出力が L（0 V）に切り替わります。',
+      '今度は C1 が R1 を通して放電。下側しきい値 1.7 V を下回ると出力が H に戻ります。',
+      'しきい値が2つあるので、C1 は 1.7〜2.9 V を往復し続けます。普通のNOTゲートだと、しきい値付近で止まってしまいます。'
+    ],
+    watch: 'CH1（Vc）は 1.7〜2.9 V の三角波状、CH2（出力）は方形波です。',
+    tries: ['R1 を 4.7 kΩ にすると約 2 倍の速さで発振します。'],
+    comps: [['SCHMITT', 2, 2, 0], ['R', 3, 0, 0, { R: 10000 }], ['C', 1, 3, 1, { C: 1e-6 }], ['GND', 1, 5, 0]],
+    wires: [[[5, 2], [6, 2], [6, 0], [5, 0]], [[3, 0], [1, 0], [1, 2], [2, 2]], [[1, 2], [1, 3]], [[6, 2], [8, 2]]],
+    probes: [[1, 2, 'Vc'], [8, 2, 'Vout']]
+  },
+  {
+    id: 'logic', name: '論理ゲートの実験', cat: 'IC', dt: 1e-4, win: 0.05,
+    summary: '2つのスイッチで入力を変え、ゲートの真理値表を確かめる。',
+    role: 'デジタル回路の最小単位、論理ゲートの動きを体験します。NANDだけであらゆる論理回路が作れる（万能ゲート）ことでも知られています。',
+    steps: [
+      'SW1 / SW2 が OFF のとき、R1 / R2（プルダウン抵抗）が入力を 0 V（L）に保ちます。',
+      'スイッチを ON にすると入力が 5 V（H）になります。',
+      'U1 は2つの入力の組み合わせで出力を決めます。NANDなら「両方Hのときだけ L」。',
+      '出力が H のとき LED1 が点灯します。'
+    ],
+    watch: 'スイッチをタップして4通りの組み合わせを試してください。CH1・CH2（入力）と CH3（出力）の関係が真理値表どおりになります。',
+    tries: ['U1 を選んで「種類」を AND / OR / NOR / XOR に変えてみましょう。', 'プルダウン抵抗を消すと、OFFのとき入力が不定（どこにもつながっていない）になります。実際の回路では誤動作の原因です。'],
+    comps: [['RAIL', 0, 0, 0, { V: 5 }], ['SW', 2, 2, 0, { on: true }], ['SW', 2, 6, 0, { on: false }], ['R', 5, 2, 1, { R: 10000 }], ['R', 5, 6, 1, { R: 10000 }], ['GND', 5, 4, 0], ['GND', 5, 8, 0], ['GATE', 8, 2, 0, { kind: 'NAND' }], ['R', 14, 3, 1, { R: 330 }], ['LED', 14, 5, 1], ['GND', 14, 7, 0]],
+    wires: [[[0, 0], [0, 6]], [[0, 2], [2, 2]], [[0, 6], [2, 6]], [[4, 2], [8, 2]], [[4, 6], [7, 6], [7, 4], [8, 4]], [[12, 3], [14, 3]]],
+    probes: [[8, 2, 'A'], [8, 4, 'B'], [12, 3, 'OUT']]
+  }
+];
+if (false) module.exports = { PATTERNS };
+
+/* ===== 部品図鑑 ===== */
+const DOCS = {
+  R: { en: 'Resistor', role: '電流の流れにくさを作る部品。電流を制限したり、電圧を分けたりします。', how: '両端にかかる電圧と流れる電流は比例します（オームの法則）。抵抗値が大きいほど電流は流れにくくなります。', like: '水道管の細くなった部分。細いほど水（電流）が流れにくくなります。', formula: ['V = I × R（オームの法則）', '消費電力 P = I² × R', '直列 R = R1 + R2 ／ 並列 1/R = 1/R1 + 1/R2'], uses: ['LEDの電流制限', '分圧回路', 'プルアップ・プルダウン', 'RC回路の時定数'], note: '定格電力（1/4 W など）を超えると発熱して焼損します。値はカラーコード（茶黒赤 = 1 kΩ など）で表示されています。', pats: ['divider', 'led', 'rc'] },
+  C: { en: 'Capacitor', role: '電気（電荷）を蓄える部品。直流は通さず、交流は通しやすい性質があります。', how: '2枚の金属板が向かい合った構造で、電圧をかけると板に電荷がたまります。電圧は急には変化できません。', like: '水をためるタンク。いっぱいになるまで水が流れ込み、出口を開くと流れ出します。', formula: ['Q = C × V（電荷 = 容量 × 電圧）', '電流 i = C × dV/dt', 'リアクタンス Xc = 1 ÷（2πfC）', '時定数 τ = R × C'], uses: ['電源の平滑', 'ICの電源安定（パスコン）', 'タイマー・発振', '直流カット（カップリング）', 'フィルタ'], note: '電解コンデンサには極性（＋−）があり、逆に付けると破損します。耐圧（16 V、25 V など）にも注意。', pats: ['rc', 'lpf', 'halfwave'] },
+  L: { en: 'Inductor', role: '電流の変化をきらう部品。電流が急に増えたり減ったりするのを妨げます。', how: '導線を巻いたもので、電流が流れると磁界にエネルギーを蓄えます。電流を変えようとすると、それを打ち消す向きの電圧（逆起電力）が生じます。', like: '重い水車。回し始めるのに力が要り、一度回ると簡単には止まりません。', formula: ['電圧 V = L × di/dt', 'リアクタンス XL = 2πfL', 'LC共振 f0 = 1 ÷（2π√(LC)）'], uses: ['ノイズ除去', 'LC共振（ラジオの選局）', 'DC-DCコンバータ', 'フィルタ'], note: 'コイルの電流を急に切ると高い電圧が発生します。リレーやモーターには逆向きにダイオード（フライホイールダイオード）を付けて保護します。', pats: ['rlc'] },
+  SW: { en: 'Switch', role: '回路をつないだり切ったりする部品。', how: 'ONで導通（抵抗ほぼ0）、OFFで開放（電流が流れない）。', like: '水道の蛇口。', formula: [], uses: ['電源スイッチ', 'デジタル入力'], note: 'このアプリでは、スイッチをタップするとON/OFFが切り替わります。シミュレーション中でも操作できます。', pats: ['led', 'logic'] },
+  V: { en: 'DC Voltage Source', role: '一定の電圧を出し続ける電源（電池など）。', how: '記号の長い線が＋、短い線が−です。電流は＋から出て回路を回り、−に戻ります。', like: '水を高い所へくみ上げるポンプ。電圧は水の高さの差にあたります。', formula: [], uses: ['電池', 'ACアダプタ', '実験用電源'], note: '＋と−を直接つなぐ（ショート）と大電流が流れ、電池が発熱・破損します。', pats: ['divider', 'led'] },
+  AC: { en: 'AC Voltage Source', role: '電圧の向きと大きさが周期的に変わる電源。', how: 'v = オフセット + 振幅 × sin(2πft)。家庭のコンセントは実効値 100 V（振幅は約 141 V）、東日本 50 Hz、西日本 60 Hz です。', like: '行ったり来たりする波。', formula: ['実効値 = 振幅 ÷ √2', '周期 T = 1 ÷ f'], uses: ['商用電源', 'オーディオ信号', 'フィルタの実験'], note: '記号の＋印の側が、波形が正のときに高くなる端子です。', pats: ['lpf', 'halfwave', 'cw'] },
+  SQ: { en: 'Square Wave Source', role: 'HとLの2つの電圧を交互に出す電源。', how: '周期の前半が Hレベル、後半が Lレベルになります。デジタル信号やクロックの代わりに使えます。', like: 'スイッチを一定のリズムでON/OFFし続けるイメージ。', formula: ['周期 T = 1 ÷ f'], uses: ['ステップ応答の観察', 'クロック信号', 'PWM'], note: '', pats: ['rc', 'rlc', 'trsw'] },
+  RAIL: { en: 'Power Rail', role: '回路図を簡単にするための電源記号。', how: 'GNDとの間に指定の電圧の電源がある、という意味です。同じ電圧の端子は見えない線でつながっていると考えます。', like: '建物のコンセント。どこからでも同じ電圧が取れます。', formula: [], uses: ['ICの電源ピン（VCC、+12 V、−12 V）', '大きな回路図の整理'], note: '負の電圧（−12 V など）も設定できます。', pats: ['inv', 'astable'] },
+  GND: { en: 'Ground', role: '電圧の基準点（0 V）。', how: '回路の電圧はすべて GND からの高さで表します。回路に GND がないと電圧が決まりません。', like: '海抜0メートル。山の高さ（電圧）は海面から測ります。', formula: [], uses: ['電源の−側', '信号の基準'], note: '回路にGNDを最低1つ置いてください。GND記号どうしはすべてつながっています。', pats: [] },
+  D: { en: 'Diode', role: '電流を一方向にだけ流す部品。', how: 'アノード（三角の側）からカソード（線の側）へは約 0.6〜0.7 V の電圧で電流が流れ始めます。逆向きにはほとんど流れません。', like: '逆止弁。水は一方向にしか流れません。', formula: ['順方向電圧 Vf ≒ 0.7 V（シリコン）', 'i = Is ×（e^(V/nVt) − 1）'], uses: ['整流（交流→直流）', '逆接続保護', '倍電圧回路', 'フライホイール'], note: 'このシミュレーションは小信号ダイオード 1N4148 相当です。部品のカソード側には帯の印があります。', pats: ['halfwave', 'bridge', 'cw'] },
+  LED: { en: 'Light Emitting Diode', role: '電流を流すと光るダイオード。', how: '順方向電圧は色で異なり、赤は約 2 V、青・白は約 3 V。電圧を少し上げるだけで電流が急増するので、必ず電流制限抵抗と組み合わせます。', like: '光る逆止弁。', formula: ['電流制限抵抗 R =（電源電圧 − Vf）÷ If'], uses: ['表示灯', '照明', 'フォトカプラ'], note: '足の長い方がアノード（＋）。このアプリでは電流に応じて明るく光ります（約 15 mA で最大）。', pats: ['led', 'trsw', 'astable'] },
+  Z: { en: 'Zener Diode', role: '逆向きに一定の電圧がかかると電流を流し、電圧を一定に保つダイオード。', how: '順方向は普通のダイオードと同じ。逆方向はツェナー電圧（Vz）までは流れず、Vz を超えると急に流れて電圧を Vz 付近に固定します。', like: '一定の高さで水をあふれさせる堤防。', formula: ['直列抵抗 R =（Vin − Vz）÷（負荷電流 + ツェナー電流）'], uses: ['簡易定電圧電源', '基準電圧', '過電圧保護'], note: 'カソードを＋側に向けて（逆向きに）使います。', pats: ['zener'] },
+  NPN: { en: 'NPN Transistor', role: '小さなベース電流で、大きなコレクタ電流を制御する部品。スイッチや増幅に使います。', how: 'ベース(B)からエミッタ(E)へ約 0.7 V で電流が流れると、コレクタ(C)からエミッタへその hFE 倍の電流が流れられるようになります。', like: '小さな力で大きな水門を開ける仕組み。', formula: ['Ic = hFE × Ib（このアプリは hFE ≒ 100）', 'V(BE) ≒ 0.6〜0.7 V', 'ベース抵抗 Rb ≒（Vin − 0.7）÷（Ic ÷ hFE × 3〜5）'], uses: ['マイコンで大電流を制御', '信号の増幅', 'デジタル回路'], note: 'エミッタの矢印は電流の向き（NPNは外向き）。代表品は 2SC1815。', pats: ['trsw'] },
+  OPAMP: { en: 'Operational Amplifier', role: '＋入力と−入力の電圧差を非常に大きく（約10万倍）増幅するIC。', how: '出力から−入力へ帰還をかけると、2つの入力の電圧がほぼ等しくなるように動きます（仮想短絡）。増幅率は外付けの抵抗で自由に決められます。出力は電源電圧を超えられません。', like: '「左右の皿を常に釣り合わせようとする」自動天秤。', formula: ['反転増幅 Vout = −Vin × Rf ÷ Rin', '非反転増幅 Vout = Vin ×（1 + Rf ÷ Rg）', 'ボルテージフォロワ Vout = Vin'], uses: ['信号の増幅', 'フィルタ', 'コンパレータ', 'バッファ'], note: '上下の電源ピン（V+、V−）を必ず接続してください。代表品は LM358、NJM4558（1パッケージに2回路）。', pats: ['inv', 'comp'] },
+  T555: { en: '555 Timer', role: '一定時間のパルスや発振を作るタイマーIC。', how: '内部に、VCC の 2/3 と 1/3 を比べる2つのコンパレータ、状態を記憶するフリップフロップ、コンデンサを放電するトランジスタが入っています。', like: '水がたまったら栓を抜き、空になったら栓をする「ししおどし」。', formula: ['無安定 周期 T ≒ 0.693 ×（RA + 2RB）× C', '単安定 パルス幅 t ≒ 1.1 × R × C'], uses: ['LEDの点滅', 'ブザーの発音', 'PWM', '遅延タイマー'], note: 'ピン：1 GND、2 TRIG（1/3 VCC以下でセット）、3 OUT、4 RESET（Lで強制リセット）、5 CTRL（しきい値、10 nFでGNDへ）、6 THR（2/3 VCC以上でリセット）、7 DIS（放電）、8 VCC。', pats: ['astable'] },
+  REG: { en: '3-Terminal Regulator', role: '入力電圧が変わっても、決まった電圧（5 V）を出力する電源IC。', how: '出力電圧を監視しながら、内部のトランジスタで余分な電圧を熱として捨てます（リニアレギュレータ）。', like: '水圧を一定にする減圧弁。', formula: ['必要な入力 ≧ 5 V + 約 2 V（ドロップアウト電圧）', '発熱 P =（Vin − Vout）× I'], uses: ['マイコン・ロジックICの 5 V 電源'], note: 'ピンは左から IN・GND・OUT（TO-220の場合）。入出力にコンデンサを付けます。発熱が大きいときは放熱器が必要です。', pats: ['reg'] },
+  NOT: { en: 'NOT Gate', role: '入力の H / L を反転して出力するゲート（インバータ）。', how: '入力が L（2.5 V未満）なら出力 H（5 V）、入力が H なら出力 L（0 V）。', like: '「逆さま言葉」で返す人。', formula: ['Y = Ā'], uses: ['信号の反転', '発振回路', 'バッファ'], note: '74HC04 には6回路入っています。このアプリでは電源ピンを省略し、5 V で動作します。', pats: [] },
+  SCHMITT: { en: 'Schmitt Trigger Inverter', role: 'しきい値が2つある NOT ゲート。ノイズに強く、ゆっくりした信号も確実に切り替えます。', how: '入力が上がるときは 2.9 V、下がるときは 1.7 V で切り替わります（ヒステリシス）。記号の中の小さな四角い曲線がしるしです。', like: 'エアコンの温度制御。26℃で冷房ON、24℃でOFFのように、幅を持たせるとON/OFFを細かく繰り返しません。', formula: [], uses: ['RC発振回路', 'スイッチのチャタリング除去', '波形整形'], note: '74HC14 には6回路入っています。電源ピンは省略（5 V 動作）。', pats: ['schmitt'] },
+  GATE: { en: 'Logic Gate', role: '2つの入力の H / L の組み合わせから出力を決めるデジタルIC。', how: 'AND：両方 H で H。OR：どちらか H で H。NAND：AND の反転。NOR：OR の反転。XOR：入力が異なるとき H。', like: 'ルールに従って「はい／いいえ」を答える係。', formula: ['AND Y = A·B', 'OR Y = A + B', 'NAND Y = ¬(A·B)', 'XOR Y = A ⊕ B'], uses: ['デジタル回路', '条件判定', 'フリップフロップ', '加算器'], note: '74HC00（NAND）、74HC08（AND）、74HC32（OR）、74HC02（NOR）、74HC86（XOR）。プロパティの「種類」で切り替えられます。電源ピンは省略（5 V 動作）。', pats: ['logic'] }
+};
+if (false) module.exports = { DOCS };
+
+/* ===== 回路工房 UI ===== */
+const $ = s => document.querySelector(s);
+const SHORT = { R: '抵抗', C: 'コンデンサ', L: 'コイル', SW: 'スイッチ', V: '直流電源', AC: '交流', SQ: '方形波', RAIL: '電源端子', GND: 'GND', D: 'ダイオード', LED: 'LED', Z: 'ツェナー', NPN: 'NPN', OPAMP: 'オペアンプ', T555: '555', REG: '7805', NOT: 'NOT', SCHMITT: '74HC14', GATE: 'ゲート' };
+const GROUPS = [['基本', ['R', 'C', 'L', 'SW']], ['電源', ['V', 'AC', 'SQ', 'RAIL', 'GND']], ['半導体', ['D', 'LED', 'Z', 'NPN']], ['IC', ['OPAMP', 'T555', 'REG', 'NOT', 'SCHMITT', 'GATE']]];
+const MONO = '"IBM Plex Mono", ui-monospace, Menlo, monospace';
+const store = {
+  get(k) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } }
+};
+
+/* ---------- 色 ---------- */
+let C = {};
+function readColors() {
+  const cs = getComputedStyle(document.documentElement);
+  for (const k of ['paper', 'panel', 'ink', 'muted', 'line', 'grid', 'part', 'wire', 'accent', 'sel', 'vpos', 'vneg', 'vzero', 'led', 'scope', 'scope-grid', 'scope-axis', 'scope-txt', 'ch1', 'ch2', 'ch3', 'ch4'])
+    C[k] = cs.getPropertyValue('--' + k).trim() || '#888';
+  C.ch = [C.ch1, C.ch2, C.ch3, C.ch4];
+}
+function hexRgb(h) { h = h.replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); const n = parseInt(h, 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function mix(a, b, t) { const A = hexRgb(a), B = hexRgb(b); return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(',')})`; }
+function rgba(h, a) { const [r, g, b] = hexRgb(h); return `rgba(${r},${g},${b},${a})`; }
+
+/* ---------- 記号の描画（グリッド単位） ---------- */
+function mkTxt(g) {
+  return (x, y, s, size, align, bold, color) => {
+    const m = g.getTransform(), p = m.transformPoint(new DOMPoint(x, y)), sc = Math.hypot(m.a, m.b);
+    g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
+    g.fillStyle = color || C.part; g.font = `${bold ? 600 : 500} ${size * sc}px ${MONO}`;
+    g.textAlign = align || 'center'; g.textBaseline = 'middle'; g.fillText(s, p.x, p.y); g.restore();
+  };
+}
+function drawSymbol(g, t, c, st) {
+  const L = (a, b, x, y) => { g.beginPath(); g.moveTo(a, b); g.lineTo(x, y); g.stroke(); };
+  const T = mkTxt(g); const p = c.p || {};
+  const thick = (fn) => { g.save(); g.lineWidth *= 1.7; fn(); g.restore(); };
+  const arrow = (x1, y1, x2, y2) => { L(x1, y1, x2, y2); const a = Math.atan2(y2 - y1, x2 - x1), h = .14; g.beginPath(); g.moveTo(x2, y2); g.lineTo(x2 - h * Math.cos(a - .5), y2 - h * Math.sin(a - .5)); g.lineTo(x2 - h * Math.cos(a + .5), y2 - h * Math.sin(a + .5)); g.closePath(); g.fill(); };
+  g.strokeStyle = C.part; g.fillStyle = C.part; g.lineCap = 'round'; g.lineJoin = 'round';
+  switch (t) {
+    case 'R': L(0, 0, .5, 0); L(1.5, 0, 2, 0); g.strokeRect(.5, -.2, 1, .4); break;
+    case 'C': L(0, 0, .86, 0); L(1.14, 0, 2, 0); thick(() => { L(.86, -.42, .86, .42); L(1.14, -.42, 1.14, .42); }); break;
+    case 'L': L(0, 0, .3, 0); L(1.7, 0, 2, 0); g.beginPath(); g.moveTo(.3, 0); for (let i = 0; i < 4; i++) g.arc(.475 + i * .35, 0, .175, Math.PI, 0); g.stroke(); break;
+    case 'D': case 'LED': case 'Z': {
+      const lit = t === 'LED' && st && st.i > 2e-4;
+      if (lit) {
+        const a = Math.min(1, st.i / 0.015), gr = g.createRadialGradient(1, 0, 0, 1, 0, 1.4);
+        gr.addColorStop(0, rgba(C.led, .75 * a)); gr.addColorStop(1, rgba(C.led, 0));
+        g.fillStyle = gr; g.beginPath(); g.arc(1, 0, 1.4, 0, 7); g.fill();
+      }
+      L(0, 0, .65, 0); L(1.35, 0, 2, 0);
+      g.fillStyle = lit ? C.led : C.part; g.beginPath(); g.moveTo(.65, -.36); g.lineTo(.65, .36); g.lineTo(1.35, 0); g.closePath(); g.fill();
+      g.fillStyle = C.part; thick(() => L(1.35, -.36, 1.35, .36));
+      if (t === 'Z') { L(1.35, -.36, 1.2, -.48); L(1.35, .36, 1.5, .48); }
+      if (t === 'LED') { arrow(.95, -.45, 1.25, -.8); arrow(1.25, -.4, 1.55, -.75); }
+      break;
+    }
+    case 'V': L(0, 0, .84, 0); L(1.16, 0, 2, 0); thick(() => { L(.84, -.48, .84, .48); L(1.16, -.26, 1.16, .26); }); T(.5, -.45, '+', .45); break;
+    case 'AC': case 'SQ':
+      L(0, 0, .42, 0); L(1.58, 0, 2, 0); g.beginPath(); g.arc(1, 0, .58, 0, 7); g.stroke(); g.beginPath();
+      if (t === 'AC') { for (let k = 0; k <= 24; k++) { const x = .66 + .68 * k / 24, y = -.22 * Math.sin(2 * Math.PI * k / 24); k ? g.lineTo(x, y) : g.moveTo(x, y); } }
+      else { g.moveTo(.66, .18); g.lineTo(.66, -.18); g.lineTo(1, -.18); g.lineTo(1, .18); g.lineTo(1.34, .18); g.lineTo(1.34, -.18); }
+      g.stroke(); T(.2, -.45, '+', .45); break;
+    case 'SW':
+      L(0, 0, .55, 0); L(1.45, 0, 2, 0);
+      g.beginPath(); g.arc(.6, 0, .07, 0, 7); g.fill(); g.beginPath(); g.arc(1.4, 0, .07, 0, 7); g.fill();
+      if (p.on) L(.6, 0, 1.42, -.08); else L(.6, 0, 1.3, -.52);
+      break;
+    case 'GND': L(0, 0, 0, .35); L(-.42, .35, .42, .35); L(-.27, .52, .27, .52); L(-.12, .69, .12, .69); break;
+    case 'RAIL': L(0, 0, 0, -.42); thick(() => L(-.38, -.42, .38, -.42)); break;
+    case 'NPN':
+      g.beginPath(); g.arc(1.3, 0, .86, 0, 7); g.stroke();
+      L(0, 0, .85, 0); thick(() => L(.85, -.42, .85, .42));
+      L(.85, -.16, 2, -.7); L(2, -.7, 2, -1); L(.85, .16, 2, .7); L(2, .7, 2, 1);
+      arrow(1.25, .35, 1.78, .6); break;
+    case 'OPAMP':
+      g.beginPath(); g.moveTo(.5, -.6); g.lineTo(.5, 2.6); g.lineTo(3.5, 1); g.closePath(); g.stroke();
+      L(0, 0, .5, 0); L(0, 2, .5, 2); L(3.5, 1, 4, 1); L(2, -1, 2, .2); L(2, 3, 2, 1.8);
+      T(.85, 0, '−', .55, 'center', true); T(.85, 2, '+', .55, 'center', true); break;
+    case 'NOT': case 'SCHMITT':
+      L(0, 0, .5, 0); g.beginPath(); g.moveTo(.5, -.55); g.lineTo(.5, .55); g.lineTo(2.2, 0); g.closePath(); g.stroke();
+      g.beginPath(); g.arc(2.36, 0, .16, 0, 7); g.stroke(); L(2.52, 0, 3, 0);
+      if (t === 'SCHMITT') { g.beginPath(); g.moveTo(.72, .14); g.lineTo(1.12, .14); g.lineTo(1.12, -.14); g.moveTo(.86, .14); g.lineTo(.86, -.14); g.lineTo(1.26, -.14); g.stroke(); }
+      break;
+    case 'GATE': {
+      const k = p.kind || 'NAND', inv = k === 'NAND' || k === 'NOR';
+      g.beginPath();
+      if (k === 'AND' || k === 'NAND') { g.moveTo(.8, -.5); g.lineTo(1.8, -.5); g.arc(1.8, 1, 1.5, -Math.PI / 2, Math.PI / 2); g.lineTo(.8, 2.5); g.closePath(); }
+      else { g.moveTo(.7, -.5); g.quadraticCurveTo(2.4, -.5, 3.3, 1); g.quadraticCurveTo(2.4, 2.5, .7, 2.5); g.quadraticCurveTo(1.25, 1, .7, -.5); }
+      g.stroke();
+      if (k === 'XOR') { g.beginPath(); g.moveTo(.45, 2.5); g.quadraticCurveTo(1.0, 1, .45, -.5); g.stroke(); }
+      const ix = (k === 'AND' || k === 'NAND') ? .8 : .95;
+      L(0, 0, ix, 0); L(0, 2, ix, 2);
+      if (inv) { g.beginPath(); g.arc(3.46, 1, .16, 0, 7); g.stroke(); L(3.62, 1, 4, 1); } else L(3.3, 1, 4, 1);
+      break;
+    }
+    case 'T555':
+      g.strokeRect(0, 0, 4, 4);
+      L(-1, 1, 0, 1); L(-1, 2, 0, 2); L(-1, 3, 0, 3); L(4, 2, 5, 2); L(1, -1, 1, 0); L(3, -1, 3, 0); L(1, 4, 1, 5); L(3, 4, 3, 5);
+      T(.15, 1, 'DIS', .34, 'left'); T(.15, 2, 'THR', .34, 'left'); T(.15, 3, 'TRIG', .34, 'left'); T(3.85, 2, 'OUT', .34, 'right');
+      T(1, .35, 'VCC', .32); T(3, .35, 'RST', .32); T(1, 3.65, 'GND', .32); T(3, 3.65, 'CTRL', .32);
+      T(2.15, 2, '555', .62, 'center', true); break;
+    case 'REG':
+      g.strokeRect(.5, -.8, 3, 1.8); L(0, 0, .5, 0); L(3.5, 0, 4, 0); L(2, 1, 2, 2);
+      T(2, -.25, '7805', .5, 'center', true); T(.65, .55, 'IN', .3, 'left'); T(3.35, .55, 'OUT', .3, 'right'); T(2, .62, 'GND', .3); break;
+  }
+}
+
+/* ---------- 回路の幾何 ---------- */
+function compBox(c) {
+  const ps = pinPos(c); let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  ps.forEach(([x, y]) => { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); });
+  if (c.t === 'GND' || c.t === 'RAIL') { const [dx, dy] = rotPt(0, c.t === 'GND' ? .7 : -.7, c.r); return [x0 - .5 + Math.min(dx, 0), y0 - .5 + Math.min(dy, 0), x1 + .5 + Math.max(dx, 0), y1 + .5 + Math.max(dy, 0)]; }
+  const pad = .5;
+  if (x1 - x0 < 1) { x0 -= pad; x1 += pad; } if (y1 - y0 < 1) { y0 -= pad; y1 += pad; }
+  if (c.t === 'NPN') { const b = [[0, -1], [2.2, 1]].map(([a, d]) => rotPt(a, d, c.r)).map(([a, d]) => [c.x + a, c.y + d]); b.forEach(([a, d]) => { x0 = Math.min(x0, a); y0 = Math.min(y0, d); x1 = Math.max(x1, a); y1 = Math.max(y1, d); }); }
+  return [x0, y0, x1, y1];
+}
+function circBox(circ) {
+  let b = [1e9, 1e9, -1e9, -1e9];
+  const ext = (x0, y0, x1, y1) => { b = [Math.min(b[0], x0), Math.min(b[1], y0), Math.max(b[2], x1), Math.max(b[3], y1)]; };
+  circ.comps.forEach(c => ext(...compBox(c)));
+  circ.wires.forEach(w => ext(Math.min(w.x1, w.x2), Math.min(w.y1, w.y2), Math.max(w.x1, w.x2), Math.max(w.y1, w.y2)));
+  if (b[0] > b[2]) b = [-4, -3, 4, 3];
+  return b;
+}
+function valueStr(c) {
+  const p = c.p;
+  switch (c.t) {
+    case 'R': return fmtSI(p.R, 'Ω'); case 'C': return fmtSI(p.C, 'F'); case 'L': return fmtSI(p.L, 'H');
+    case 'V': return fmtSI(p.V, 'V'); case 'AC': return '±' + fmtSI(p.A, 'V') + ' ' + fmtSI(p.f, 'Hz') + (p.off ? ' +' + fmtSI(p.off, 'V') : '');
+    case 'SQ': return fmtSI(p.lo, 'V') + '/' + fmtSI(p.hi, 'V') + ' ' + fmtSI(p.f, 'Hz');
+    case 'Z': return fmtSI(p.Vz, 'V'); case 'GATE': return p.kind; case 'SW': return p.on ? 'ON' : 'OFF';
+    case 'OPAMP': return ''; case 'T555': return ''; case 'REG': return ''; case 'NOT': return '74HC04'; case 'SCHMITT': return '74HC14';
+    default: return '';
+  }
+}
+function topology(circ) {
+  const cnt = new Map(), pins = new Map();
+  const inc = (x, y, n) => { const k = key(x, y); cnt.set(k, (cnt.get(k) || 0) + n); };
+  circ.wires.forEach(w => { inc(w.x1, w.y1, 1); inc(w.x2, w.y2, 1); });
+  circ.comps.forEach(c => pinPos(c).forEach(([x, y]) => { inc(x, y, 1); pins.set(key(x, y), 1); }));
+  for (const k of [...cnt.keys()]) { const [x, y] = k.split(',').map(Number); for (const w of circ.wires) if (onInterior(x, y, w)) cnt.set(k, cnt.get(k) + 2); }
+  return { cnt, pins };
+}
+
+/* ---------- 回路の描画（エディタ・サムネイル共通） ---------- */
+function drawCircuit(g, cam, dpr, W, H, circ, o) {
+  o = o || {};
+  const s = cam.s, sx = x => x * s + cam.x, sy = y => y * s + cam.y;
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.fillStyle = C.paper; g.fillRect(0, 0, W, H);
+  if (o.grid !== false && s >= 9) {
+    const gx0 = Math.floor(-cam.x / s), gx1 = Math.ceil((W - cam.x) / s), gy0 = Math.floor(-cam.y / s), gy1 = Math.ceil((H - cam.y) / s);
+    for (let x = gx0; x <= gx1; x++) for (let y = gy0; y <= gy1; y++) {
+      const major = x % 5 === 0 && y % 5 === 0;
+      g.fillStyle = C.grid; const r = major ? 1.5 : 1; g.fillRect(sx(x) - r / 2, sy(y) - r / 2, r, r);
+    }
+  }
+  const sim = o.sim;
+  const vsm = o.vsm, vmax = o.vmax || 1;
+  const netCol = (x, y) => {
+    if (!sim) return C.wire;
+    const n = netOfPoint(sim, circ, x, y); if (n < 0) return C.vzero;
+    const v = vsm && n > 0 && n - 1 < vsm.length ? vsm[n - 1] : sim.v(n), t = Math.max(-1, Math.min(1, v / vmax));
+    return t >= 0 ? mix(C.vzero, C.vpos, Math.pow(t, .7)) : mix(C.vzero, C.vneg, Math.pow(-t, .7));
+  };
+  // 配線
+  g.lineCap = 'round'; g.lineWidth = Math.max(1.6, s * .075);
+  for (const w of circ.wires) {
+    const sel = o.selWire === w.id || (o.selSet && o.selSet.wires.has(w.id));
+    if (sel) { g.strokeStyle = rgba(C.sel, .45); g.lineWidth = Math.max(7, s * .3); g.beginPath(); g.moveTo(sx(w.x1), sy(w.y1)); g.lineTo(sx(w.x2), sy(w.y2)); g.stroke(); g.lineWidth = Math.max(1.6, s * .075); }
+    g.strokeStyle = netCol(w.x1, w.y1); g.beginPath(); g.moveTo(sx(w.x1), sy(w.y1)); g.lineTo(sx(w.x2), sy(w.y2)); g.stroke();
+  }
+  // 部品
+  for (const c of circ.comps) {
+    if (o.selComp === c.id || (o.selSet && o.selSet.comps.has(c.id))) {
+      const b = compBox(c); g.fillStyle = rgba(C.sel, .16); g.strokeStyle = C.sel; g.lineWidth = 1.5; g.setLineDash([4, 3]);
+      g.fillRect(sx(b[0]), sy(b[1]), (b[2] - b[0]) * s, (b[3] - b[1]) * s); g.strokeRect(sx(b[0]), sy(b[1]), (b[2] - b[0]) * s, (b[3] - b[1]) * s); g.setLineDash([]);
+    }
+    g.save(); g.setTransform(dpr * s, 0, 0, dpr * s, dpr * sx(c.x), dpr * sy(c.y)); g.rotate((c.r || 0) * Math.PI / 2);
+    g.lineWidth = Math.max(1.4, s * .065) / s;
+    const st = sim ? (sim.byId.get(c.id) || {}).st : null;
+    drawSymbol(g, c.t, c, st); g.restore();
+  }
+  // ラベル
+  if (o.labels !== false && s >= 14) {
+    g.setTransform(dpr, 0, 0, dpr, 0, 0); g.textBaseline = 'middle';
+    const fs = Math.min(13, Math.max(9.5, s * .4));
+    for (const c of circ.comps) {
+      const v = valueStr(c);
+      if (c.t === 'RAIL') {
+        const [dx, dy] = rotPt(0, -.95, c.r); g.fillStyle = C.part; g.font = `600 ${fs}px ${MONO}`; g.textAlign = 'center';
+        g.fillText((c.p.V > 0 ? '+' : '') + fmtSI(c.p.V, 'V').replace(' ', ''), sx(c.x + dx), sy(c.y + dy)); continue;
+      }
+      if (!c.label) continue;
+      const b = compBox(c), cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2, n = TYPES[c.t].pins.length;
+      const horiz = n === 2 && (c.r % 2 === 0);
+      g.fillStyle = C.ink; g.font = `600 ${fs}px ${MONO}`;
+      if (n === 2 && !horiz) {
+        g.textAlign = 'left'; g.fillText(c.label, sx(b[2] + .05), sy(cy) - (v ? fs * .55 : 0));
+        if (v) { g.fillStyle = C.muted; g.font = `500 ${fs * .92}px ${MONO}`; g.fillText(v, sx(b[2] + .05), sy(cy) + fs * .6); }
+      } else if (horiz) {
+        const lw = g.measureText(c.label + (v ? ' ' : '')).width; g.font = `500 ${fs * .92}px ${MONO}`; const vw = v ? g.measureText(v).width : 0;
+        const x0 = sx(cx) - (lw + vw) / 2; g.textAlign = 'left';
+        g.font = `600 ${fs}px ${MONO}`; g.fillText(c.label, x0, sy(b[1] - .05));
+        if (v) { g.fillStyle = C.muted; g.font = `500 ${fs * .92}px ${MONO}`; g.fillText(v, x0 + lw, sy(b[1] - .05)); }
+      } else {
+        g.textAlign = 'left'; g.fillText(c.label + (v ? '  ' + v : ''), sx(b[0]), sy(b[1] - .2));
+      }
+    }
+  }
+  // 接続点
+  const topo = o.topo || topology(circ);
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  for (const [k, n] of topo.cnt) {
+    const [x, y] = k.split(',').map(Number);
+    if (n >= 3) { g.fillStyle = netCol(x, y); g.beginPath(); g.arc(sx(x), sy(y), Math.max(2.6, s * .12), 0, 7); g.fill(); }
+    else if (n === 1 && topo.pins.has(k) && o.openPins !== false) { g.strokeStyle = C.muted; g.lineWidth = 1.2; g.beginPath(); g.arc(sx(x), sy(y), Math.max(2.4, s * .1), 0, 7); g.stroke(); }
+  }
+  // プローブ
+  if (o.probes !== false) circ.probes.forEach((p, i) => {
+    const X = sx(p.x), Y = sy(p.y), col = C.ch[i % 4], r = Math.max(8, s * .32);
+    g.fillStyle = col; g.strokeStyle = C.paper; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(X, Y); g.lineTo(X + r * .5, Y - r * 1.1); g.arc(X + r * 1.1, Y - r * 1.4, r * .75, Math.PI * .85, Math.PI * 2.65); g.closePath(); g.stroke(); g.fill();
+    g.fillStyle = '#111'; g.font = `600 ${r * .85}px ${MONO}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(i + 1), X + r * 1.1, Y - r * 1.4);
+  });
+}
+function netOfPoint(sim, circ, x, y) {
+  const n = sim.netAt(x, y); if (n >= 0) return n;
+  for (const w of circ.wires) if (onInterior(x, y, w)) return sim.netAt(w.x1, w.y1);
+  return -1;
+}
+function camFit(circ, W, H, maxS) {
+  const b = circBox(circ), bw = b[2] - b[0] + 3.6, bh = b[3] - b[1] + 2.4;
+  const s = Math.max(8, Math.min(maxS || 40, W / bw, H / bh));
+  return { s, x: W / 2 - (b[0] + b[2]) / 2 * s, y: H / 2 - (b[1] + b[3]) / 2 * s + s * .2 };
+}
+function renderStatic(canvas, circ, opts) {
+  const r = canvas.getBoundingClientRect(), dpr = devicePixelRatio || 1;
+  const W = r.width || 300, H = r.height || 150;
+  canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+  const g = canvas.getContext('2d');
+  drawCircuit(g, camFit(circ, W, H, (opts && opts.maxS) || 30), dpr, W, H, circ, Object.assign({ openPins: false }, opts || {}));
+}
+function renderSymbolCanvas(canvas, t, scale) {
+  const r = canvas.getBoundingClientRect(), dpr = devicePixelRatio || 1, W = r.width || 44, H = r.height || 26;
+  canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+  const g = canvas.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+  const c = { t, x: 0, y: 0, r: 0, p: defaultsOf(t) };
+  const b = compBox(c), bw = b[2] - b[0], bh = b[3] - b[1];
+  const s = Math.min(W / (bw + .2), H / (bh + .2)) * (scale || 1);
+  g.setTransform(dpr * s, 0, 0, dpr * s, dpr * (W / 2 - (b[0] + b[2]) / 2 * s), dpr * (H / 2 - (b[1] + b[3]) / 2 * s));
+  g.lineWidth = Math.max(1.2, s * .06) / s;
+  drawSymbol(g, t, c, t === 'LED' ? { i: 0.012 } : null);
+}
+
+/* ---------- アプリ状態 ---------- */
+const S = {
+  circ: null, sel: null, mode: 'select', placeType: null, pending: null, cam: { x: 40, y: 40, s: 28 },
+  sim: null, running: false, set: { dt: 1e-5, win: 0.01, speed: 1 }, pat: null, undo: [], topo: null,
+  buf: null, scopeOn: true
+};
+const cv = $('#cv'), ctx = cv.getContext('2d');
+let W = 0, H = 0, DPR = 1, dirty = true;
+
+function snapshot() { return JSON.stringify({ circ: S.circ, set: S.set, pat: S.pat, edited: S.edited }); }
+function pushUndo() { S.edited = true; S.undo.push(snapshot()); if (S.undo.length > 60) S.undo.shift(); $('#bUndo').disabled = false; }
+function restore(js, keepCam) {
+  const o = JSON.parse(js); S.circ = o.circ; S.set = o.set; S.pat = o.pat; S.edited = !!o.edited;
+  S.sel = null; S.pending = null; closeSheet(); changed(true);
+  if (!keepCam) fitView();
+}
+function changed(structural) {
+  S.topo = topology(S.circ);
+  if (structural) { S.sim = null; S.buf = null; S.vsm = null; }
+  dirty = true; save(); updateTopbar();
+}
+function save() { store.set('kairo.current', JSON.parse(snapshot())); }
+function updateTopbar() {
+  const p = PATTERNS.find(x => x.id === S.pat);
+  $('#patName').textContent = p ? '／ ' + p.name : '';
+  $('#bExplain').hidden = !p;
+  $('#bUndo').disabled = !S.undo.length;
+}
+
+/* ---------- シミュレーション ---------- */
+function startSim() {
+  S.sim = new Sim(S.circ, S.set.dt);
+  S.buf = { t: [], v: S.circ.probes.map(() => []), next: 0, nets: S.circ.probes.map(p => netOfPoint(S.sim, S.circ, p.x, p.y)) };
+  if (!S.sim.nets.hasGround && S.circ.comps.length) toast('GND がありません。GND を1つ置くと電圧が正しく決まります。');
+}
+function sample() {
+  const b = S.buf, sim = S.sim; if (sim.t < b.next) return;
+  b.next = sim.t + S.set.win / 600;
+  b.t.push(sim.t); b.nets.forEach((n, i) => b.v[i].push(n >= 0 ? sim.v(n) : NaN));
+  if (b.t.length > 1400) { const cut = b.t.length - 700; b.t.splice(0, cut); b.v.forEach(a => a.splice(0, cut)); }
+}
+function setRunning(on) {
+  S.running = on; const b = $('#bRun');
+  b.textContent = on ? '⏸ 停止' : '▶ 実行'; b.classList.toggle('on', on);
+}
+function smoothVolts() {
+  const sim = S.sim; if (!sim) return;
+  const n = sim.N - 1;
+  if (!S.vsm || S.vsm.length !== n) { S.vsm = Float64Array.from(sim.x.subarray(0, n)); S.vmax = 1; }
+  let m = 1;
+  for (let i = 0; i < n; i++) { S.vsm[i] += (sim.x[i] - S.vsm[i]) * 0.08; m = Math.max(m, Math.abs(sim.x[i])); }
+  S.vmax = Math.max(m, (S.vmax || 1) * 0.995);
+}
+function resetSim() { S.vsm = null; S.sim = null; S.buf = null; dirty = true; drawScope(); updateTime(); }
+function updateTime() { $('#tdisp').textContent = 'SCOPE  t = ' + fmtSI(S.sim ? S.sim.t : 0, 's', 4); }
+
+let lastFrame = 0, infoTick = 0;
+function frame(ts) {
+  if (S.running) {
+    if (!S.sim) startSim();
+    const sim = S.sim, adv = S.set.win / (2.5 * 60) * S.set.speed;
+    const n = Math.max(1, Math.round(adv / sim.dt)), t0 = performance.now();
+    for (let i = 0; i < n; i++) {
+      if (!sim.step()) { setRunning(false); toast(sim.err); break; }
+      sample();
+      if ((i & 7) === 7 && performance.now() - t0 > 13) break;
+    }
+    smoothVolts(); dirty = true; drawScope(); updateTime();
+  }
+  if (dirty && !$('#v-edit').hidden) { render(); dirty = false; }
+  if (++infoTick % 6 === 0) updateReadout();
+  requestAnimationFrame(frame);
+}
+
+/* ---------- エディタ描画 ---------- */
+function resize() {
+  const r = $('#stage').getBoundingClientRect(); DPR = devicePixelRatio || 1;
+  W = r.width; H = r.height; cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  dirty = true; drawScope();
+}
+function render() {
+  drawCircuit(ctx, S.cam, DPR, W, H, S.circ, {
+    sim: S.sim, vsm: S.vsm, vmax: S.vmax, selComp: S.sel && S.sel.c, selWire: S.sel && S.sel.w, selSet: S.sel && S.sel.m, topo: S.topo
+  });
+  const s = S.cam.s, sx = x => x * s + S.cam.x, sy = y => y * s + S.cam.y;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  if (!S.circ.comps.length && !S.circ.wires.length) {
+    ctx.fillStyle = C.muted; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '600 15px ' + getComputedStyle(document.body).fontFamily;
+    ctx.fillText('まだ部品がありません', W / 2, H / 2 - 22);
+    ctx.font = '13px ' + getComputedStyle(document.body).fontFamily;
+    ctx.fillText('下のパレットから部品を選んでタップで配置、', W / 2, H / 2 + 6);
+    ctx.fillText('または「回路パターン」タブから定番回路を開けます。', W / 2, H / 2 + 26);
+  }
+  const rr = S.rect || (S.sel && S.sel.m && S.sel.m.rect);
+  if (rr && (S.mode === 'area')) {
+    const x0 = Math.min(rr[0], rr[2]), y0 = Math.min(rr[1], rr[3]), w = Math.abs(rr[2] - rr[0]), h = Math.abs(rr[3] - rr[1]);
+    ctx.fillStyle = rgba(C.accent, .08); ctx.fillRect(sx(x0), sy(y0), w * s, h * s);
+    ctx.strokeStyle = C.accent; ctx.lineWidth = 1.5; ctx.setLineDash([6, 4]); ctx.strokeRect(sx(x0), sy(y0), w * s, h * s); ctx.setLineDash([]);
+  }
+  if (S.mode === 'wire' && S.pending) {
+    const [ax, ay] = S.pending;
+    ctx.fillStyle = C.sel; ctx.beginPath(); ctx.arc(sx(ax), sy(ay), 5, 0, 7); ctx.fill();
+    if (S.preview) {
+      ctx.strokeStyle = C.sel; ctx.lineWidth = 2.5; ctx.setLineDash([6, 4]); ctx.beginPath();
+      wirePath(S.pending, S.preview, S.vfirst).forEach(([a, b, c, d], i) => { if (!i) ctx.moveTo(sx(a), sy(b)); ctx.lineTo(sx(c), sy(d)); });
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+  }
+  if (S.hover && (S.mode === 'wire' || S.mode === 'probe' || S.mode === 'place')) {
+    ctx.strokeStyle = C.accent; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(sx(S.hover[0]), sy(S.hover[1]), 7, 0, 7); ctx.stroke();
+  }
+}
+
+/* ---------- スコープ ---------- */
+const sc = $('#sc'), sctx = sc.getContext('2d');
+function niceStep(x) { const e = Math.pow(10, Math.floor(Math.log10(x))); for (const m of [1, 2, 5, 10]) if (m * e >= x) return m * e; return 10 * e; }
+function drawScope() {
+  if (!S.scopeOn) return;
+  const r = sc.getBoundingClientRect(), dpr = devicePixelRatio || 1, w = r.width, h = r.height;
+  if (!w) return;
+  if (sc.width !== Math.round(w * dpr)) { sc.width = Math.round(w * dpr); sc.height = Math.round(h * dpr); }
+  const g = sctx; g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.fillStyle = C.scope; g.fillRect(0, 0, w, h);
+  const nx = 10, ny = 8;
+  g.strokeStyle = C['scope-grid']; g.lineWidth = 1;
+  for (let i = 1; i < nx; i++) { const x = Math.round(i * w / nx) + .5; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); }
+  for (let i = 1; i < ny; i++) { const y = Math.round(i * h / ny) + .5; g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
+  g.strokeStyle = C['scope-axis']; g.strokeRect(.5, .5, w - 1, h - 1);
+  const b = S.buf, leg = $('#legend');
+  const probes = S.circ.probes;
+  if (!probes.length) {
+    leg.innerHTML = '<span>プローブなし</span>';
+    g.fillStyle = C['scope-txt']; g.font = `12px ${MONO}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('パレットの「プローブ」で測定点をタップ', w / 2, h / 2); return;
+  }
+  const tnow = S.sim ? S.sim.t : 0, win = S.set.win, t0 = tnow - win;
+  let lo = Infinity, hi = -Infinity;
+  if (b) b.v.forEach(a => { for (let i = 0; i < a.length; i++) if (b.t[i] >= t0 && isFinite(a[i])) { lo = Math.min(lo, a[i]); hi = Math.max(hi, a[i]); } });
+  if (!isFinite(lo)) { lo = -1; hi = 1; }
+  lo = Math.min(lo, 0); hi = Math.max(hi, 0);
+  const div = niceStep(Math.max((hi - lo) / (ny - 1), 0.05));
+  let center = Math.round((hi + lo) / 2 / div) * div;
+  if (hi > center + div * ny / 2) center += div; if (lo < center - div * ny / 2) center -= div;
+  const yv = v => h / 2 - (v - center) / div * (h / ny), xt = t => (t - t0) / win * w;
+  // 0V ライン
+  g.strokeStyle = C['scope-axis']; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(0, Math.round(yv(0)) + .5); g.lineTo(w, Math.round(yv(0)) + .5); g.stroke(); g.setLineDash([]);
+  if (b) b.v.forEach((a, k) => {
+    g.strokeStyle = C.ch[k % 4]; g.lineWidth = 1.6; g.beginPath(); let st = false;
+    for (let i = 0; i < a.length; i++) { if (b.t[i] < t0 || !isFinite(a[i])) continue; const x = xt(b.t[i]), y = yv(a[i]); st ? g.lineTo(x, y) : g.moveTo(x, y); st = true; }
+    g.stroke();
+  });
+  g.fillStyle = C['scope-txt']; g.font = `10.5px ${MONO}`; g.textBaseline = 'top'; g.textAlign = 'left';
+  g.fillText(fmtSI(div, 'V') + '/div', 5, 4);
+  g.textAlign = 'right'; g.fillText(fmtSI(win / nx, 's') + '/div', w - 5, 4);
+  g.textBaseline = 'middle'; g.textAlign = 'left'; g.fillText('0V', 4, Math.max(8, Math.min(h - 8, yv(0) - 7)));
+  leg.innerHTML = probes.map((p, i) => {
+    const a = b && b.v[i], v = a && a.length ? a[a.length - 1] : NaN;
+    return `<span><b style="color:${C.ch[i % 4]}">CH${i + 1}</b> ${p.name} ${(isFinite(v) ? fmtSI(v, 'V') : '—').padStart(9)}</span>`;
+  }).join('');
+}
+
+/* ---------- 操作 ---------- */
+const toGrid = (x, y) => [(x - S.cam.x) / S.cam.s, (y - S.cam.y) / S.cam.s];
+function hitComp(gx, gy) {
+  for (let i = S.circ.comps.length - 1; i >= 0; i--) { const c = S.circ.comps[i], b = compBox(c); if (gx >= b[0] && gx <= b[2] && gy >= b[1] && gy <= b[3]) return c; }
+  return null;
+}
+function hitWire(gx, gy) {
+  const tol = Math.max(.3, 10 / S.cam.s);
+  for (let i = S.circ.wires.length - 1; i >= 0; i--) {
+    const w = S.circ.wires[i];
+    const x0 = Math.min(w.x1, w.x2) - tol, x1 = Math.max(w.x1, w.x2) + tol, y0 = Math.min(w.y1, w.y2) - tol, y1 = Math.max(w.y1, w.y2) + tol;
+    if (gx >= x0 && gx <= x1 && gy >= y0 && gy <= y1) return w;
+  }
+  return null;
+}
+function wirePath(a, b, vfirst) {
+  const [ax, ay] = a, [bx, by] = b; if (ax === bx && ay === by) return [];
+  if (ax === bx || ay === by) return [[ax, ay, bx, by]];
+  const m = vfirst ? [ax, by] : [bx, ay];
+  return [[ax, ay, m[0], m[1]], [m[0], m[1], bx, by]];
+}
+function addWires(a, b, vfirst) {
+  const segs = wirePath(a, b, vfirst); if (!segs.length) return false;
+  pushUndo();
+  for (const [x1, y1, x2, y2] of segs) {
+    if (S.circ.wires.some(w => (w.x1 === x1 && w.y1 === y1 && w.x2 === x2 && w.y2 === y2) || (w.x1 === x2 && w.y1 === y2 && w.x2 === x1 && w.y2 === y1))) continue;
+    S.circ.wires.push({ id: S.circ.nextId++, x1, y1, x2, y2 });
+  }
+  changed(true); return true;
+}
+function placeComp(t, x, y) {
+  pushUndo();
+  const c = { id: S.circ.nextId++, t, x, y, r: 0, p: defaultsOf(t) };
+  assignLabel(S.circ, c); S.circ.comps.push(c);
+  changed(true); select({ c: c.id });
+}
+function isConnPoint(x, y) {
+  if (S.topo.cnt.has(key(x, y))) return true;
+  return S.circ.wires.some(w => onInterior(x, y, w));
+}
+function toggleProbe(x, y) {
+  const probes = S.circ.probes;
+  const i = probes.findIndex(p => p.x === x && p.y === y);
+  if (i >= 0) { pushUndo(); probes.splice(i, 1); changed(true); toast('プローブを外しました'); return; }
+  if (!isConnPoint(x, y)) { toast('配線か端子の上をタップしてください'); return; }
+  if (probes.length >= 4) { toast('プローブは4つまでです。既存のプローブをタップすると外せます。'); return; }
+  pushUndo();
+  const used = new Set(probes.map(p => p.name)); let n = 1; while (used.has('P' + n)) n++;
+  probes.push({ x, y, name: 'P' + n }); changed(true);
+}
+
+const ptrs = new Map(); let gest = null;
+cv.addEventListener('pointerdown', e => {
+  cv.setPointerCapture(e.pointerId);
+  const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  ptrs.set(e.pointerId, { x, y });
+  if (ptrs.size === 2) {
+    const [a, b] = [...ptrs.values()];
+    gest = { type: 'pinch', d0: Math.hypot(a.x - b.x, a.y - b.y), s0: S.cam.s, m0: [(a.x + b.x) / 2, (a.y + b.y) / 2], cam0: { ...S.cam } };
+    return;
+  }
+  if (ptrs.size > 2) return;
+  const [gx, gy] = toGrid(x, y);
+  gest = { type: 'one', x0: x, y0: y, gx0: gx, gy0: gy, moved: false, cam0: { ...S.cam } };
+  if (S.mode === 'select') {
+    const c = hitComp(gx, gy);
+    if (c) { gest.comp = c; gest.cx = c.x; gest.cy = c.y; }
+  } else if (S.mode === 'wire') {
+    gest.start = [Math.round(gx), Math.round(gy)];
+  } else if (S.mode === 'area') {
+    const m = S.sel && S.sel.m, r = m && m.rect;
+    if (r && gx >= r[0] && gx <= r[2] && gy >= r[1] && gy <= r[3]) gest.group = m;
+    else gest.area = [gx, gy];
+  }
+});
+cv.addEventListener('pointermove', e => {
+  const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  if (!ptrs.has(e.pointerId)) {
+    if (e.pointerType === 'mouse') { const [gx, gy] = toGrid(x, y); const h = [Math.round(gx), Math.round(gy)]; if (!S.hover || h[0] !== S.hover[0] || h[1] !== S.hover[1]) { S.hover = h; if (S.pending) S.preview = h; dirty = true; } }
+    return;
+  }
+  ptrs.set(e.pointerId, { x, y });
+  if (!gest) return;
+  if (gest.type === 'pinch' && ptrs.size >= 2) {
+    const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y), m = [(a.x + b.x) / 2, (a.y + b.y) / 2];
+    const s = Math.max(8, Math.min(90, gest.s0 * d / gest.d0)), k = s / gest.cam0.s;
+    S.cam = { s, x: m[0] - (gest.m0[0] - gest.cam0.x) * k, y: m[1] - (gest.m0[1] - gest.cam0.y) * k };
+    dirty = true; return;
+  }
+  if (gest.type !== 'one') return;
+  const dx = x - gest.x0, dy = y - gest.y0;
+  if (!gest.moved && Math.hypot(dx, dy) > 7) {
+    gest.moved = true;
+    if (gest.comp || gest.group) pushUndo();
+    if (gest.group) gest.group.orig = groupCoords(gest.group);
+    if (gest.start) { S.pending = gest.start; S.vfirst = Math.abs(dy) > Math.abs(dx); }
+  }
+  if (!gest.moved) return;
+  const [gx, gy] = toGrid(x, y);
+  if (gest.comp) {
+    const nx = gest.cx + Math.round(gx - gest.gx0), ny = gest.cy + Math.round(gy - gest.gy0);
+    if (nx !== gest.comp.x || ny !== gest.comp.y) { gest.comp.x = nx; gest.comp.y = ny; S.topo = topology(S.circ); S.sim = null; S.buf = null; dirty = true; }
+  } else if (gest.start) {
+    S.preview = [Math.round(gx), Math.round(gy)]; dirty = true;
+  } else if (gest.area) {
+    S.rect = [gest.area[0], gest.area[1], gx, gy]; dirty = true;
+  } else if (gest.group) {
+    moveGroup(gest.group, Math.round(gx - gest.gx0), Math.round(gy - gest.gy0));
+  } else {
+    S.cam.x = gest.cam0.x + dx; S.cam.y = gest.cam0.y + dy; dirty = true;
+  }
+});
+function endPtr(e) {
+  ptrs.delete(e.pointerId);
+  if (!gest) return;
+  if (gest.type === 'pinch') { if (ptrs.size === 0) gest = null; return; }
+  const g = gest; gest = null;
+  const [gx, gy] = toGrid(g.x0, g.y0), px = Math.round(gx), py = Math.round(gy);
+  if (g.moved) {
+    if (g.comp) { changed(true); }
+    else if (g.group) { changed(true); openSheet(); }
+    else if (g.area && S.rect) { selectArea(S.rect); S.rect = null; dirty = true; }
+    else if (g.start && S.preview) { addWires(g.start, S.preview, S.vfirst); S.pending = S.preview; S.preview = null; dirty = true; }
+    return;
+  }
+  // タップ
+  if (S.mode === 'select') {
+    const c = hitComp(gx, gy);
+    if (c) {
+      if (c.t === 'SW') { c.p.on = !c.p.on; dirty = true; save(); toast(c.label + ' を ' + (c.p.on ? 'ON' : 'OFF') + ' にしました'); }
+      select({ c: c.id });
+    } else { const w = hitWire(gx, gy); if (w) select({ w: w.id }); else select(null); }
+  } else if (S.mode === 'wire') {
+    if (S.pending && S.pending[0] === px && S.pending[1] === py) { S.pending = null; S.preview = null; }
+    else if (S.pending) { const a = S.pending; S.vfirst = false; addWires(a, [px, py], false); S.pending = [px, py]; S.preview = null; }
+    else S.pending = [px, py];
+    dirty = true;
+  } else if (S.mode === 'place') {
+    placeComp(S.placeType, px, py); setMode('select');
+  } else if (S.mode === 'probe') {
+    toggleProbe(px, py);
+  } else if (S.mode === 'area') {
+    select(null);
+  }
+}
+cv.addEventListener('pointerup', endPtr);
+cv.addEventListener('pointercancel', endPtr);
+cv.addEventListener('wheel', e => {
+  e.preventDefault();
+  const r = cv.getBoundingClientRect(); zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * .0015));
+}, { passive: false });
+function zoomAt(x, y, k) {
+  const s = Math.max(8, Math.min(90, S.cam.s * k)); k = s / S.cam.s;
+  S.cam = { s, x: x - (x - S.cam.x) * k, y: y - (y - S.cam.y) * k }; dirty = true;
+}
+function fitView() { if (W) { S.cam = camFit(S.circ, W, H - 40, 40); S.cam.y += 16; dirty = true; } }
+
+/* ---------- モードとパレット ---------- */
+const HINTS = {
+  select: '部品をタップで選択、ドラッグで移動。空いた所をドラッグで画面移動、2本指で拡大縮小。スイッチはタップでON/OFF。',
+  wire: '始点をタップ → 終点をタップで配線（ドラッグでも可）。続けてタップすると線をつなげて引けます。同じ点をもう一度タップで終了。',
+  place: '置きたい場所（グリッドの点）をタップしてください。',
+  area: '指でなぞって四角く囲むと、中の部品と配線をまとめて選択します。選んだ後は削除や、枠の中をドラッグして移動ができます。2本指で画面移動・拡大縮小。',
+  probe: '電圧を測りたい配線・端子をタップ（最大4つ）。プローブをもう一度タップで外します。'
+};
+function setMode(m, t) {
+  S.mode = m; S.placeType = t || null; S.pending = null; S.preview = null; S.rect = null;
+  document.querySelectorAll('.chip').forEach(ch => ch.classList.toggle('on', ch.dataset.mode === m && (m !== 'place' || ch.dataset.t === t)));
+  $('#hint').textContent = m === 'place' ? `「${TYPES[t].name}」を${HINTS.place}` : HINTS[m];
+  if (m !== 'select' || (S.sel && S.sel.m)) select(null);
+  dirty = true;
+}
+function buildPalette() {
+  const pal = $('#palette'); pal.innerHTML = '';
+  [['select', '選択', '↖'], ['wire', '配線', '⌐'], ['probe', 'プローブ', '⊙'], ['area', '範囲', '⬚']].forEach(([m, n, ic]) => {
+    const b = document.createElement('button'); b.className = 'chip tool'; b.dataset.mode = m;
+    b.innerHTML = `<span class="ic">${ic}</span>${n}`; b.onclick = () => setMode(m); pal.appendChild(b);
+  });
+  for (const [gname, list] of GROUPS) {
+    const gl = document.createElement('span'); gl.className = 'pgroup'; gl.textContent = gname; pal.appendChild(gl);
+    for (const t of list) {
+      const b = document.createElement('button'); b.className = 'chip'; b.dataset.mode = 'place'; b.dataset.t = t;
+      b.innerHTML = `<canvas></canvas><span>${SHORT[t]}</span>`; b.onclick = () => setMode('place', t);
+      pal.appendChild(b);
+    }
+  }
+  drawPaletteIcons();
+}
+function drawPaletteIcons() { document.querySelectorAll('#palette .chip[data-t]').forEach(b => renderSymbolCanvas(b.querySelector('canvas'), b.dataset.t)); }
+
+/* ---------- プロパティシート ---------- */
+const sheet = $('#sheet');
+function select(sel) {
+  S.sel = sel; dirty = true;
+  if (!sel) { closeSheet(); return; }
+  openSheet();
+}
+function groupCoords(m) {
+  return {
+    c: S.circ.comps.filter(c => m.comps.has(c.id)).map(c => [c, c.x, c.y]),
+    w: S.circ.wires.filter(w => m.wires.has(w.id)).map(w => [w, w.x1, w.y1, w.x2, w.y2]),
+    p: m.probes.map(p => [p, p.x, p.y]), r: m.rect.slice()
+  };
+}
+function moveGroup(m, dx, dy) {
+  const o = m.orig; if (!o) return;
+  o.c.forEach(([c, x, y]) => { c.x = x + dx; c.y = y + dy; });
+  o.w.forEach(([w, a, b, c, d]) => { w.x1 = a + dx; w.y1 = b + dy; w.x2 = c + dx; w.y2 = d + dy; });
+  o.p.forEach(([p, x, y]) => { p.x = x + dx; p.y = y + dy; });
+  m.rect = [o.r[0] + dx, o.r[1] + dy, o.r[2] + dx, o.r[3] + dy];
+  S.topo = topology(S.circ); S.sim = null; S.buf = null; S.vsm = null; dirty = true;
+}
+function selectArea(r) {
+  const x0 = Math.min(r[0], r[2]), x1 = Math.max(r[0], r[2]), y0 = Math.min(r[1], r[3]), y1 = Math.max(r[1], r[3]);
+  const inside = (x, y) => x >= x0 - 1e-9 && x <= x1 + 1e-9 && y >= y0 - 1e-9 && y <= y1 + 1e-9;
+  const comps = new Set(S.circ.comps.filter(c => pinPos(c).every(([x, y]) => inside(x, y))).map(c => c.id));
+  const wires = new Set(S.circ.wires.filter(w => inside(w.x1, w.y1) && inside(w.x2, w.y2)).map(w => w.id));
+  const probes = S.circ.probes.filter(p => inside(p.x, p.y));
+  if (!comps.size && !wires.size && !probes.length) { select(null); toast('範囲内に部品や配線がありません。部品の端子がすべて入るように囲んでください。'); return; }
+  select({ m: { comps, wires, probes, rect: [x0, y0, x1, y1] } });
+}
+function deleteMulti(m) {
+  pushUndo();
+  S.circ.comps = S.circ.comps.filter(c => !m.comps.has(c.id));
+  S.circ.wires = S.circ.wires.filter(w => !m.wires.has(w.id));
+  S.circ.probes = S.circ.probes.filter(p => !m.probes.includes(p));
+  const n = m.comps.size, k = m.wires.size;
+  select(null); changed(true); toast(`部品 ${n} 個と配線 ${k} 本を削除しました。「戻す」で元に戻せます。`);
+}
+function closeSheet() { sheet.hidden = true; sheet.innerHTML = ''; }
+function openSheet() {
+  const sel = S.sel; sheet.hidden = false;
+  if (sel.m) {
+    const m = sel.m;
+    sheet.innerHTML = `<h3>範囲選択<span class="tn">部品 ${m.comps.size} 個・配線 ${m.wires.size} 本${m.probes.length ? '・プローブ ' + m.probes.length + ' 個' : ''}</span><button class="x" id="sx" aria-label="閉じる">×</button></h3>
+      <p style="margin:6px 0 0;font-size:12px;color:var(--muted)">枠の中をドラッグすると、選んだ部分をまとめて移動できます。</p>
+      <div class="row"><button class="btn danger" id="sdel">選んだ部分を削除</button><button class="btn" id="sall">すべて選択</button></div>`;
+    $('#sx').onclick = () => select(null);
+    $('#sdel').onclick = () => deleteMulti(m);
+    $('#sall').onclick = () => { const b = circBox(S.circ); selectArea([b[0] - 1, b[1] - 1, b[2] + 1, b[3] + 1]); };
+    return;
+  }
+  if (sel.w) {
+    sheet.innerHTML = `<h3>配線<button class="x" id="sx" aria-label="閉じる">×</button></h3><div class="row"><button class="btn danger" id="sdel">削除</button></div>`;
+    $('#sx').onclick = () => select(null);
+    $('#sdel').onclick = () => { pushUndo(); S.circ.wires = S.circ.wires.filter(w => w.id !== sel.w); select(null); changed(true); };
+    return;
+  }
+  const c = S.circ.comps.find(x => x.id === sel.c); if (!c) { closeSheet(); return; }
+  const T = TYPES[c.t];
+  let h = `<h3>${c.label || T.name}<span class="tn">${c.label ? T.name : ''}</span><button class="x" id="sx" aria-label="閉じる">×</button></h3>`;
+  for (const q of T.params) {
+    if (q.options) h += `<div class="field"><label for="pp_${q.k}">${q.label}</label><div class="in"><select id="pp_${q.k}">${q.options.map(o => `<option${o === c.p[q.k] ? ' selected' : ''}>${o}</option>`).join('')}</select></div></div>`;
+    else h += `<div class="field"><label for="pp_${q.k}">${q.label}</label><div class="in"><input id="pp_${q.k}" value="${fmtSI(c.p[q.k], '').trim()}" autocomplete="off" enterkeyhint="done"><span class="u">${q.unit}</span></div></div>`;
+  }
+  if (T.params.some(q => !q.options)) h += `<div class="field"><label></label><div style="font-size:11px;color:var(--muted)">k（キロ）, M（メガ）, m（ミリ）, u（マイクロ）, n（ナノ）, p（ピコ）が使えます。例：4.7k、10u</div></div>`;
+  h += `<dl class="readout" id="readout"></dl><div class="row">`;
+  if (T.toggle) h += `<button class="btn primary" id="stog">${c.p.on ? 'OFFにする' : 'ONにする'}</button>`;
+  if (!T.norot) h += `<button class="btn" id="srot">回転</button>`;
+  h += `<button class="btn" id="sdoc">部品の解説</button><button class="btn danger" id="sdel">削除</button></div>`;
+  sheet.innerHTML = h;
+  $('#sx').onclick = () => select(null);
+  for (const q of T.params) {
+    const el = $('#pp_' + q.k);
+    const apply = () => {
+      const v = q.options ? el.value : parseSI(el.value);
+      if (!q.options && !isFinite(v)) { toast('数値を読み取れませんでした（例：4.7k、100u）'); el.value = fmtSI(c.p[q.k], '').trim(); return; }
+      if (v === c.p[q.k]) return;
+      pushUndo(); c.p[q.k] = v; if (!q.options) el.value = fmtSI(v, '').trim();
+      changed(false);
+    };
+    el.addEventListener('change', apply);
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') { el.blur(); } });
+  }
+  if (T.toggle) $('#stog').onclick = () => { c.p.on = !c.p.on; save(); dirty = true; openSheet(); };
+  if (!T.norot) $('#srot').onclick = () => { pushUndo(); c.r = ((c.r || 0) + 1) % 4; changed(true); };
+  $('#sdoc').onclick = () => openDoc(c.t);
+  $('#sdel').onclick = () => {
+    pushUndo(); S.circ.comps = S.circ.comps.filter(x => x.id !== c.id); select(null); changed(true);
+  };
+  updateReadout(true);
+}
+function updateReadout(force) {
+  const ro = document.getElementById('readout'); if (!ro || !S.sel || !S.sel.c) return;
+  if (!S.sim) { ro.innerHTML = `<dt>測定値</dt><dd style="font-family:var(--f-body);text-align:right">▶ 実行で表示</dd>`; return; }
+  const e = S.sim.byId.get(S.sel.c); if (!e) { ro.innerHTML = ''; return; }
+  const rows = (TYPES[e.c.t].info || (() => []))(e, S.sim);
+  ro.innerHTML = rows.map(([k, v, u]) => `<dt>${k}</dt><dd>${typeof v === 'number' ? fmtSI(v, u, 4) : v}</dd>`).join('');
+}
+
+/* ---------- トースト ---------- */
+let toastT = 0;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600); }
+
+/* ---------- モーダル ---------- */
+const modal = $('#modal'), mbox = $('#mbox');
+function openModal(html) { mbox.innerHTML = html; modal.hidden = false; mbox.scrollTop = 0; const x = mbox.querySelector('[data-close]'); if (x) x.onclick = closeModal; }
+function closeModal() { modal.hidden = true; mbox.innerHTML = ''; }
+modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+const closeBtn = '<button class="x" data-close aria-label="閉じる">×</button>';
+
+function loadPattern(id) {
+  const p = PATTERNS.find(x => x.id === id); if (!p) return;
+  if (S.circ && S.circ.comps.length) pushUndo();
+  S.circ = makeCirc(p); S.set = { dt: p.dt, win: p.win, speed: 1 }; S.pat = id; S.edited = false;
+  S.sel = null; closeSheet(); setMode('select'); changed(true);
+  showView('edit'); requestAnimationFrame(() => { fitView(); setRunning(true); });
+}
+function openPattern(id) {
+  const p = PATTERNS.find(x => x.id === id);
+  openModal(`<div class="mtop"><div><div class="en">${p.cat}</div><h2>${p.name}</h2></div>${closeBtn}</div>
+    <canvas class="big" id="mbig"></canvas>
+    <h4>この回路の役割</h4><p>${p.role}</p>
+    <h4>動作の流れ</h4><ol>${p.steps.map(s => `<li>${s}</li>`).join('')}</ol>
+    <h4>波形の見どころ</h4><p>${p.watch}</p>
+    <h4>試してみよう</h4><ul>${p.tries.map(s => `<li>${s}</li>`).join('')}</ul>
+    <h4>使っている部品</h4><div class="tags">${[...new Set(p.comps.map(c => c[0]))].filter(t => t !== 'GND').map(t => `<button data-doc="${t}">${SHORT[t]}</button>`).join('')}</div>
+    <div class="mact"><button class="btn primary" id="mopen">${S.pat === id ? 'エディタに戻る' : 'エディタで開いてシミュレーション'}</button></div>`);
+  renderStatic($('#mbig'), makeCirc(p), { maxS: 34 });
+  $('#mopen').onclick = () => { closeModal(); if (S.pat === id) { showView('edit'); return; } loadPattern(id); };
+  mbox.querySelectorAll('[data-doc]').forEach(b => b.onclick = () => openDoc(b.dataset.doc));
+}
+function openDoc(t) {
+  const d = DOCS[t], T = TYPES[t];
+  const pats = (d.pats || []).map(id => PATTERNS.find(p => p.id === id)).filter(Boolean);
+  const pins = T.pinNames ? `<h4>ピン</h4><p class="mono" style="font-size:12.5px">${T.pinNames.join('　')}</p>` : '';
+  openModal(`<div class="mtop"><div><div class="en">${d.en}</div><h2>${T.name}</h2></div>${closeBtn}</div>
+    <canvas class="sym" id="msym"></canvas>
+    <h4>役割</h4><p>${d.role}</p>
+    <h4>しくみ</h4><p>${d.how}</p>
+    <h4>たとえると</h4><p>${d.like}</p>
+    ${d.formula.length ? `<h4>計算式</h4><div class="fbox">${d.formula.map(f => `<div>${f}</div>`).join('')}</div>` : ''}
+    <h4>使いどころ</h4><div class="tags">${d.uses.map(u => `<span style="font-size:12.5px;border:1px solid var(--line);border-radius:999px;padding:2px 10px">${u}</span>`).join('')}</div>
+    ${pins}
+    ${d.note ? `<h4>注意・メモ</h4><p class="note">${d.note}</p>` : ''}
+    ${pats.length ? `<h4>この部品を使う回路パターン</h4><div class="tags">${pats.map(p => `<button data-pat="${p.id}">${p.name}</button>`).join('')}</div>` : ''}
+    <div class="mact"><button class="btn primary" id="mplace">エディタに置く</button></div>`);
+  renderSymbolCanvas($('#msym'), t, .8);
+  $('#mplace').onclick = () => { closeModal(); showView('edit'); setMode('place', t); };
+  mbox.querySelectorAll('[data-pat]').forEach(b => b.onclick = () => openPattern(b.dataset.pat));
+}
+function openMenu() {
+  openModal(`<div class="mtop"><h2>メニュー</h2>${closeBtn}</div>
+    <h4>シミュレーション設定</h4>
+    <div class="field"><label for="sdt">時間刻み</label><div class="in"><input id="sdt" value="${fmtSI(S.set.dt, '').trim()}"><span class="u">s</span></div></div>
+    <div class="field"><label for="swin">表示時間</label><div class="in"><input id="swin" value="${fmtSI(S.set.win, '').trim()}"><span class="u">s</span></div></div>
+    <div class="field"><label for="sspd">再生速度</label><div class="in"><input type="range" id="sspd" min="-1" max="1" step="0.05" value="${Math.log10(S.set.speed)}"><span class="u mono" id="sspdv">×${S.set.speed.toFixed(2)}</span></div></div>
+    <p style="font-size:12px;color:var(--muted);margin-top:6px">時間刻みは、見たい現象の周期の 1/500 程度が目安です。小さいほど正確ですが遅くなります。</p>
+    <div class="mact"><button class="btn primary" id="sapply">設定を反映</button></div>
+    <h4>回路</h4>
+    <div class="mact" style="margin-top:4px"><button class="btn" id="mnew">新しい回路</button><button class="btn" id="mfit">全体を表示</button></div>
+    <h4>マイ回路</h4>
+    <div class="field"><label for="sname">名前</label><div class="in"><input id="sname" placeholder="例：自作の電源回路" style="font-family:var(--f-body)"><button class="btn primary" id="msave">保存</button></div></div>
+    <div id="slist"></div>
+    <h4>表示</h4>
+    <div class="mact" style="margin-top:4px"><button class="btn" data-th="light">ライト</button><button class="btn" data-th="dark">ダーク</button><button class="btn" data-th="">端末に合わせる</button></div>`);
+  $('#sspd').oninput = e => $('#sspdv').textContent = '×' + Math.pow(10, +e.target.value).toFixed(2);
+  $('#sapply').onclick = () => {
+    const dt = parseSI($('#sdt').value), win = parseSI($('#swin').value);
+    if (!(dt > 0) || !(win > 0)) { toast('時間は正の数で入力してください（例：10u、5m）'); return; }
+    S.set = { dt: Math.min(dt, win / 50), win, speed: Math.pow(10, +$('#sspd').value) };
+    changed(true); closeModal(); toast('設定を反映しました');
+  };
+  $('#mnew').onclick = () => { pushUndo(); S.circ = { comps: [], wires: [], probes: [], nextId: 1 }; S.pat = null; S.set = { dt: 1e-5, win: 0.01, speed: 1 }; setRunning(false); select(null); changed(true); fitView(); closeModal(); toast('新しい回路を作りました。「戻す」で元に戻せます。'); };
+  $('#mfit').onclick = () => { closeModal(); fitView(); };
+  $('#msave').onclick = () => {
+    const name = $('#sname').value.trim() || '名前なし ' + new Date().toLocaleString('ja-JP');
+    const list = store.get('kairo.saves') || []; list.unshift({ name, data: JSON.parse(snapshot()), at: Date.now() });
+    store.set('kairo.saves', list.slice(0, 40)); $('#sname').value = ''; drawSaves(); toast('「' + name + '」を保存しました');
+  };
+  mbox.querySelectorAll('[data-th]').forEach(b => b.onclick = () => {
+    const v = b.dataset.th; if (v) document.documentElement.dataset.theme = v; else delete document.documentElement.dataset.theme;
+    store.set('kairo.theme', v); themeChanged();
+  });
+  drawSaves();
+}
+function drawSaves() {
+  const el = $('#slist'); if (!el) return;
+  const list = store.get('kairo.saves') || [];
+  if (!list.length) { el.innerHTML = '<div class="empty">保存した回路はまだありません。この端末のブラウザ内に保存されます。</div>'; return; }
+  el.innerHTML = list.map((s, i) => `<div class="srow"><span class="nm">${s.name.replace(/</g, '&lt;')}</span><button class="btn" data-ld="${i}">開く</button><button class="btn danger" data-dl="${i}">削除</button></div>`).join('');
+  el.querySelectorAll('[data-ld]').forEach(b => b.onclick = () => { pushUndo(); restore(JSON.stringify(list[+b.dataset.ld].data)); closeModal(); setRunning(false); toast('読み込みました'); });
+  el.querySelectorAll('[data-dl]').forEach(b => b.onclick = () => {
+    if (b.dataset.arm) { list.splice(+b.dataset.dl, 1); store.set('kairo.saves', list); drawSaves(); }
+    else { b.dataset.arm = 1; b.textContent = 'もう一度で削除'; }
+  });
+}
+
+/* ---------- 一覧ビュー ---------- */
+let patFilter = 'すべて';
+function buildPatterns() {
+  const cats = ['すべて', ...new Set(PATTERNS.map(p => p.cat))];
+  $('#patFilters').innerHTML = cats.map(c => `<button class="${c === patFilter ? 'on' : ''}" data-c="${c}">${c}</button>`).join('');
+  $('#patFilters').querySelectorAll('button').forEach(b => b.onclick = () => { patFilter = b.dataset.c; buildPatterns(); });
+  const list = PATTERNS.filter(p => patFilter === 'すべて' || p.cat === patFilter);
+  $('#patCards').innerHTML = list.map(p => `<button class="card" data-p="${p.id}"><canvas></canvas><div class="cb"><span class="cat">${p.cat}</span><span class="nm">${p.name}</span><span class="sm">${p.summary}</span></div></button>`).join('');
+  $('#patCards').querySelectorAll('.card').forEach(b => b.onclick = () => openPattern(b.dataset.p));
+  drawPatternThumbs();
+}
+function drawPatternThumbs() { if ($('#v-pat').hidden) return; $('#patCards').querySelectorAll('.card').forEach(b => renderStatic(b.querySelector('canvas'), makeCirc(PATTERNS.find(p => p.id === b.dataset.p)), { maxS: 22, labels: false, probes: false })); }
+function buildDocs() {
+  $('#docList').innerHTML = GROUPS.map(([g, list]) => `<div class="dgroup">${g}</div><div class="plist">${list.map(t => `<button class="pitem" data-t="${t}"><canvas></canvas><div style="min-width:0"><div><span class="nm">${TYPES[t].name}</span></div><div class="sm">${DOCS[t].role}</div></div></button>`).join('')}</div>`).join('');
+  $('#docList').querySelectorAll('.pitem').forEach(b => b.onclick = () => openDoc(b.dataset.t));
+}
+function drawDocIcons() { if ($('#v-doc').hidden) return; $('#docList').querySelectorAll('.pitem').forEach(b => renderSymbolCanvas(b.querySelector('canvas'), b.dataset.t)); }
+function showView(v) {
+  ['edit', 'pat', 'doc'].forEach(k => $('#v-' + k).hidden = k !== v);
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  if (v === 'edit') { resize(); }
+  if (v === 'pat') drawPatternThumbs();
+  if (v === 'doc') drawDocIcons();
+}
+document.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => showView(b.dataset.v));
+
+/* ---------- ボタン ---------- */
+$('#bRun').onclick = () => setRunning(!S.running);
+$('#bReset').onclick = () => { resetSim(); toast('時間を 0 に戻しました'); };
+$('#bUndo').onclick = () => { if (!S.undo.length) return; restore(S.undo.pop(), true); updateTopbar(); };
+$('#bMenu').onclick = openMenu;
+$('#bExplain').onclick = () => S.pat && openPattern(S.pat);
+$('#bScope').onclick = () => { S.scopeOn = !S.scopeOn; $('#scope').classList.toggle('collapsed', !S.scopeOn); $('#bScope').textContent = S.scopeOn ? '隠す' : '表示'; resize(); };
+$('#zIn').onclick = () => zoomAt(W / 2, H / 2, 1.25);
+$('#zOut').onclick = () => zoomAt(W / 2, H / 2, 0.8);
+$('#zFit').onclick = fitView;
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.key === 'Escape') { if (!modal.hidden) closeModal(); else if (S.mode !== 'select') setMode('select'); else select(null); }
+  if ((e.key === 'Delete' || e.key === 'Backspace') && S.sel) { const b = document.getElementById('sdel'); if (b) b.click(); }
+  if (e.key === 'r' && S.sel && S.sel.c) { const b = document.getElementById('srot'); if (b) b.click(); }
+  if (e.key === ' ' && modal.hidden) { e.preventDefault(); setRunning(!S.running); }
+});
+
+/* ---------- テーマ ---------- */
+function themeChanged() { readColors(); dirty = true; drawScope(); drawPaletteIcons(); drawPatternThumbs(); drawDocIcons(); }
+try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', themeChanged); } catch (e) { }
+new MutationObserver(themeChanged).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+/* ---------- 起動 ---------- */
+(function init() {
+  const th = store.get('kairo.theme'); if (th) document.documentElement.dataset.theme = th;
+  readColors(); buildPalette(); buildPatterns(); buildDocs();
+  const saved = store.get('kairo.current');
+  const ok = saved && saved.circ && Array.isArray(saved.circ.comps) && saved.circ.comps.every(c => TYPES[c.t]);
+  if (ok && (!saved.pat || saved.edited)) { S.circ = saved.circ; S.set = saved.set || S.set; S.pat = saved.pat || null; S.edited = true; if (!S.circ.probes) S.circ.probes = []; }
+  else { S.circ = { comps: [], wires: [], probes: [], nextId: 1 }; S.pat = null; }
+  setMode('select'); changed(true);
+  new ResizeObserver(() => { if (!$('#v-edit').hidden) { const first = !W; resize(); if (first) fitView(); } }).observe($('#stage'));
+  new ResizeObserver(() => drawScope()).observe(sc);
+  resize(); fitView(); setRunning(false); updateTime();
+  requestAnimationFrame(frame);
+  if (document.fonts) document.fonts.ready.then(() => { dirty = true; drawPaletteIcons(); drawScope(); });
+})();
+
+</script>
+<script>
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>

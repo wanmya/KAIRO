@@ -24,7 +24,7 @@
   --part:#972237; --wire:#1D7646; --accent:#1F5BB8; --accent-ink:#FFFFFF; --sel:#D98200; --chip:#E3EAE6;
   --vpos:#E0472A; --vneg:#2479E0; --vzero:#7E8C85; --led:#FF3B2F;
   --scope:#0D1411; --scope-grid:#21302A; --scope-axis:#33473E; --scope-txt:#9DB3A8;
-  --ch1:#F4CC2A; --ch2:#35D0E4; --ch3:#F060D2; --ch4:#4E8CFF;
+  --ch1:#F4CC2A; --ch2:#35D0E4; --ch3:#F060D2; --ch4:#4E8CFF; --flow:#D48A00;
   --f-disp:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",sans-serif;
   --f-body:"IBM Plex Sans JP","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
@@ -33,12 +33,12 @@
   --paper:#111714; --panel:#18201C; --ink:#E3EBE6; --muted:#93A49B; --line:#2A3631; --grid:#2E3B35;
   --part:#F1828F; --wire:#4CC985; --accent:#76A6F7; --accent-ink:#0B1220; --sel:#FFB13B; --chip:#222C27;
   --vpos:#FF7A55; --vneg:#5AA2FF; --vzero:#6E7D76; --led:#FF5A48;
-  --scope:#070B09; --scope-grid:#1B2721; --scope-axis:#2C3D35; --scope-txt:#8FA79B; color-scheme:dark }}
+  --scope:#070B09; --scope-grid:#1B2721; --scope-axis:#2C3D35; --scope-txt:#8FA79B; --flow:#FFC94D; color-scheme:dark }}
 :root[data-theme="dark"]{
   --paper:#111714; --panel:#18201C; --ink:#E3EBE6; --muted:#93A49B; --line:#2A3631; --grid:#2E3B35;
   --part:#F1828F; --wire:#4CC985; --accent:#76A6F7; --accent-ink:#0B1220; --sel:#FFB13B; --chip:#222C27;
   --vpos:#FF7A55; --vneg:#5AA2FF; --vzero:#6E7D76; --led:#FF5A48;
-  --scope:#070B09; --scope-grid:#1B2721; --scope-axis:#2C3D35; --scope-txt:#8FA79B; color-scheme:dark }
+  --scope:#070B09; --scope-grid:#1B2721; --scope-axis:#2C3D35; --scope-txt:#8FA79B; --flow:#FFC94D; color-scheme:dark }
 
 [hidden]{display:none!important}
 html,body{height:100%}
@@ -116,8 +116,8 @@ main{min-height:0;min-width:0;position:relative}
 .vhead{padding-block:4px 10px}
 .vhead h2{font-family:var(--f-disp);font-weight:900;font-size:20px;margin:0;text-wrap:balance}
 .vhead p{margin:2px 0 0;color:var(--muted);font-size:12.5px;max-width:60ch}
-.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
-.filters button{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:3px 12px;font-size:12px}
+.filters{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;padding-bottom:4px;scrollbar-width:thin}
+.filters button{flex:none;white-space:nowrap;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:3px 12px;font-size:12px}
 .filters button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
 .card{border:1px solid var(--line);background:var(--panel);border-radius:12px;overflow:hidden;text-align:left;padding:0;display:flex;flex-direction:column;min-width:0}
@@ -163,8 +163,45 @@ nav.tabs button.on{color:var(--ink);background:var(--chip);font-weight:600}
 .srow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .empty{color:var(--muted);font-size:13px;padding:8px 0}
 input[type=range]{width:100%}
+
+/* ---- ステップ再生 ---- */
+.guide{flex:none;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:8px 10px 8px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.ghead{display:flex;align-items:center;gap:8px;min-width:0}
+.gstep{font-size:10.5px;letter-spacing:.1em;color:var(--accent-ink);background:var(--accent);border-radius:6px;padding:1px 6px;white-space:nowrap;font-weight:600}
+.gh{font-size:14.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--f-disp);font-weight:700}
+.ghead .x{margin-left:auto}
+.gbars{display:flex;gap:4px}
+.gbar{flex:1;height:6px;border:none;border-radius:3px;background:var(--chip);padding:0;position:relative;overflow:hidden}
+.gbar i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--accent);border-radius:3px}
+.gbar.past i{width:100%;opacity:.45}
+.gt{margin:0;font-size:13px;line-height:1.6;overflow:auto;max-width:none}
+.gv{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:2px 12px;font-size:12px;min-height:18px}
+.gv div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed var(--line);min-width:0}
+.gv span{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gv b{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.gctl{display:flex;align-items:center;gap:6px}
+.gctl select{border:1px solid var(--line);border-radius:8px;padding:5px 6px;background:var(--panel);font-size:12.5px}
+#gnext.ready{animation:nudge 1.4s ease-in-out infinite}
+@keyframes nudge{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 50%,transparent)}50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--accent) 0%,transparent)}}
+body.guiding .palette, body.guiding #hint, body.guiding #bSpeed, body.guiding #bUndo, body.guiding #bExplain{display:none}
+body.guiding #sc{height:96px}
+
+/* ---- 目的 ---- */
+.purbox{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:12px 14px 14px;margin-bottom:12px}
+.purbox h3{margin:0;font-family:var(--f-disp);font-weight:900;font-size:17px}
+.purbox .lead{margin:4px 0 0;font-weight:500;max-width:65ch}
+.purbox h4{margin:12px 0 2px;font-size:11.5px;letter-spacing:.14em;color:var(--muted);font-weight:600}
+.purbox p{margin:0;max-width:65ch;font-size:13.5px}
+.extag{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:2px 10px;background:var(--chip)}
+.purgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin-top:10px}
+.purgrid button{display:flex;flex-direction:column;gap:2px;text-align:left;border:1px solid var(--line);background:var(--paper);border-radius:10px;padding:8px 10px;min-width:0}
+.purgrid b{font-size:13.5px}
+.purgrid span{font-size:12px;color:var(--muted);line-height:1.5}
+.purpose{margin-top:12px;border:1px solid var(--line);border-radius:12px;padding:2px 12px 12px;background:color-mix(in srgb,var(--accent) 6%,var(--panel))}
+.exlist{margin:0;padding-left:1.2em}
+.exlist li{margin:2px 0}
 @media (min-width:760px){ #sc{height:150px} .big{height:260px} }
-@media (prefers-reduced-motion:reduce){ #toast{transition:none} }
+@media (prefers-reduced-motion:reduce){ #toast{transition:none} #gnext.ready{animation:none} }
 </style>
 
 </head>
@@ -179,11 +216,13 @@ input[type=range]{width:100%}
       <div class="simbar">
         <button class="btn run" id="bRun">▶ 実行</button>
         <button class="btn" id="bReset" title="時間を0に戻す">リセット</button>
+        <button class="btn" id="bSpeed" title="再生の速さ（スローモーション）">速さ ×1</button>
         <span class="sp"></span>
-        <button class="btn" id="bExplain" hidden>解説</button>
+        <button class="btn" id="bExplain" hidden>学ぶ</button>
         <button class="btn" id="bUndo">戻す</button>
         <button class="btn" id="bMenu" aria-label="メニュー">⋯</button>
       </div>
+      <div class="guide" id="guide" hidden></div>
       <div class="stage" id="stage">
         <canvas id="cv"></canvas>
         <div class="hint" id="hint"></div>
@@ -199,8 +238,9 @@ input[type=range]{width:100%}
     </section>
     <section id="v-pat" class="view" hidden>
       <div class="scroll">
-        <div class="vhead"><h2>回路パターン</h2><p>用途ごとの定番回路です。開くとエディタに読み込まれ、すぐにシミュレーションが始まります。</p></div>
+        <div class="vhead"><h2>回路パターン</h2><p>目的ごとの定番回路です。カードを開くと「何のための回路か」の説明と、動きをスローで追える「ステップ再生」があります。</p></div>
         <div class="filters" id="patFilters"></div>
+        <div class="purbox" id="purBox"></div>
         <div class="cards" id="patCards"></div>
       </div>
     </section>
@@ -535,6 +575,28 @@ class Sim {
     for (let j = 0; j < m; j++) { const vv = vs.slice(); vv[j] += 1e-6; const I1 = fn(vv); for (let k = 0; k < m; k++) J[k][j] = (I1[k] - I0[k]) / 1e-6; }
     this.NL(e.n, I0, J, vs);
   }
+  /* 各部品の端子電流（ノードから部品へ流れ込む向きを正）を求める */
+  calcPinCurrents() {
+    const sim = this, out = this._out || (this._out = new Float64Array(this.N));
+    const R = {
+      dt: sim.dt, t1: sim.t1,
+      v: n => sim.v(n), ib: br => sim.ib(br),
+      G(a, b, g) { const i = g * (sim.v(a) - sim.v(b)); out[a] += i; out[b] -= i; },
+      I(a, b, i) { out[a] += i; out[b] -= i; },
+      Vs(br, a, b) { const i = sim.ib(br); out[a] += i; out[b] -= i; },
+      NL(nodes, I0, J, v0) { for (let k = 0; k < nodes.length; k++) { let i = I0[k]; for (let j = 0; j < nodes.length; j++) i += J[k][j] * (sim.v(nodes[j]) - v0[j]); out[nodes[k]] += i; } }
+    };
+    R.NL2 = Sim.prototype.NL2; R.NLfd = Sim.prototype.NLfd;
+    for (const e of this.els) {
+      const f = TYPES[e.c.t].stamp; const m = e.n.length;
+      if (!e.pi) e.pi = new Float64Array(m);
+      e.pi.fill(0);
+      if (!f) continue;
+      for (const n of e.n) out[n] = 0;
+      f(e, R);
+      for (let k = 0; k < m; k++) { const n = e.n[k]; if (e.n.indexOf(n) === k) e.pi[k] = out[n]; }
+    }
+  }
   step() {
     const S = this.size, A = this.A, b = this.b;
     this.t1 = this.t + this.dt;
@@ -556,6 +618,7 @@ class Sim {
       if (ok) { conv = true; break; }
     }
     if (!conv) this.slow++;
+    if (this.trackCur) this.calcPinCurrents();
     this.t = this.t1;
     for (const e of this.els) { const f = TYPES[e.c.t].post; if (f) f(e, this); }
     return true;
@@ -750,13 +813,13 @@ const PATTERNS = [
     summary: '小さなベース電流で、大きなLED電流をON/OFFする。',
     role: 'マイコンの弱い出力でモーターやLED、リレーなど大きな電流の負荷を動かすときに使います。トランジスタを「電子のスイッチ」として使う基本回路です。',
     steps: [
-      'V2（方形波 0/5 V、2 Hz）が 5 V のとき、R1 を通してベースに約 0.43 mA 流れます。',
+      'V1（方形波 0/5 V、2 Hz）が 5 V のとき、R1 を通してベースに約 0.43 mA 流れます。',
       'トランジスタは hFE（約 100）倍のコレクタ電流を流そうとしますが、LEDとR2で制限されて飽和（完全ON）状態になります。',
-      'V(CE) がほぼ 0 V になり、VCC → R2 → LED1 → Q1 → GND と電流が流れて LED が点きます。',
-      'V2 が 0 V になるとベース電流が止まり、Q1 はOFF。LEDが消えます。'
+      'V(CE) がほぼ 0 V になり、V2（5 V）→ R2 → LED1 → Q1 → GND と電流が流れて LED が点きます。',
+      'V1 が 0 V になるとベース電流が止まり、Q1 はOFF。LEDが消えます。'
     ],
     watch: 'CH1（ベース側入力）が H のとき CH2（コレクタ）は 0.1 V 付近まで下がります。入力と出力が反転しているのが分かります。',
-    tries: ['R1 を 1 MΩ にするとベース電流が足りず、LEDが暗くなります（不完全なON）。', 'V2 の周波数を 10 Hz にすると速く点滅します。'],
+    tries: ['R1 を 1 MΩ にするとベース電流が足りず、LEDが暗くなります（不完全なON）。', 'V1 の周波数を 10 Hz にすると速く点滅します。'],
     comps: [['SQ', 0, 4, 1, { hi: 5, lo: 0, f: 2 }], ['R', 1, 3, 0, { R: 10000 }], ['NPN', 4, 3, 0], ['LED', 6, 0, 1], ['R', 6, -2, 1, { R: 330 }], ['V', 12, 1, 1, { V: 5 }], ['GND', 3, 7, 0]],
     wires: [[[0, 4], [0, 3], [1, 3]], [[3, 3], [4, 3]], [[0, 6], [0, 7], [12, 7]], [[6, 4], [6, 7]], [[12, 3], [12, 7]], [[6, -2], [12, -2], [12, 1]]],
     probes: [[0, 3, 'Vin'], [6, 2, 'Vc']]
@@ -869,6 +932,181 @@ const DOCS = {
 };
 if (false) module.exports = { DOCS };
 
+/* ===== 回路の目的・ステップ再生の台本 ===== */
+
+/* 目的のカテゴリ */
+const PURPOSES = [
+  {
+    id: 'power', name: '電源をつくる', pats: ['halfwave', 'bridge', 'reg', 'zener', 'cw', 'divider'],
+    lead: 'コンセントの交流や電池から、回路が必要とする「ちょうどいい直流電圧」を作る回路です。',
+    why: '電子部品の多くは、決まった直流電圧（5 V や 3.3 V など）でしか正しく動きません。電圧が高すぎれば壊れ、揺れていれば誤動作します。交流を直流に変える（整流）、揺れをならす（平滑）、ぴったりの値に保つ（安定化）、高い電圧を作る（昇圧）。どんな電子機器にも必ず入っている、いちばん大切な土台です。',
+    ex: ['スマホの充電器', 'ACアダプタ', 'パソコンの電源ユニット', '電池でマイコンを動かす', 'コピー機・空気清浄機の高電圧']
+  },
+  {
+    id: 'amp', name: '信号を大きくする（増幅）', pats: ['inv', 'trsw'],
+    lead: '小さな電気信号を、形をそのまま保って大きくする回路です。',
+    why: 'マイクやセンサーが出す信号は数ミリボルトほどと非常に小さく、そのままではスピーカーを鳴らせず、マイコンでも正確に読めません。増幅して初めて「使える大きさ」になります。弱い力で強い力を操る、という電子回路の基本的な考え方でもあります。',
+    ex: ['マイク → スピーカー（オーディオアンプ）', '心電計・脳波計', '温度・圧力・光センサーの読み取り', 'ラジオやスマホの受信回路']
+  },
+  {
+    id: 'osc', name: 'リズムをつくる（発振）', pats: ['astable', 'schmitt', 'rlc'],
+    lead: 'スイッチを入れるだけで、一定のリズム（くり返す電気信号）を自分で作り続ける回路です。',
+    why: '電子機器の多くは「拍子」を必要とします。コンピュータはクロックという発振信号の1拍ごとに計算を1歩進め、時計は発振の回数を数えて時間を測ります。音を出す、光を点滅させる、電波を飛ばす、モーターの速さを細かく調整する。どれも発振が元になっています。発振回路がなければ、時間の流れを扱う電子機器はほとんど作れません。',
+    ex: ['CPUのクロック（数GHz）', 'クオーツ時計（1秒に32,768回）', 'ブザー・電子音・電子楽器', 'ウインカー・LEDの点滅', 'ラジオ・Wi-Fi・Bluetoothの電波', 'LED調光・モーター速度制御（PWM）']
+  },
+  {
+    id: 'filter', name: '必要な周波数だけ通す（フィルタ）', pats: ['lpf', 'rlc', 'rc'],
+    lead: '信号の中から、必要な速さ（周波数）の成分だけを通し、いらない成分を弱める回路です。',
+    why: '現実の信号にはノイズ（雑音）が混ざっています。ゆっくり変わるセンサーの値に細かいギザギザが乗っていたり、音声に高い「サー」という音が入っていたりします。フィルタはそうした不要な成分を取り除き、欲しい情報だけを取り出します。ラジオで1つの放送局だけを選べるのも、フィルタ（共振）のおかげです。',
+    ex: ['オーディオのイコライザー・スピーカーの帯域分割', 'センサー値のノイズ除去', 'ラジオ・テレビの選局', 'PWM信号をなめらかな電圧に変える']
+  },
+  {
+    id: 'switch', name: '電流をON/OFFする（スイッチ）', pats: ['led', 'trsw'],
+    lead: '電流を流したり止めたりして、LEDやモーターなどの負荷を操作する回路です。',
+    why: 'マイコンのピンが出せる電流はわずか数mA〜20mA程度で、モーターやリレー、たくさんのLEDは直接動かせません。トランジスタを使えば、小さな信号で大きな電流をON/OFFできます。電子工作でマイコンと現実の機械をつなぐ橋渡し役です。',
+    ex: ['マイコンでモーター・ソレノイドを動かす', 'リレーの駆動', 'LED照明の点灯制御', '電源の自動ON/OFF']
+  },
+  {
+    id: 'judge', name: '判定する・計算する（比較・論理）', pats: ['comp', 'logic'],
+    lead: '電圧が基準より高いか低いかを判定したり、H/L（1/0）の組み合わせから答えを出したりする回路です。',
+    why: '温度が設定値を超えたらファンを回す、暗くなったら街灯をつける、といった「判断」は比較回路が行います。論理ゲートは H/L の2値で計算する部品で、これを何億個も組み合わせたものがコンピュータです。アナログの世界（連続した量）とデジタルの世界（0と1）をつなぐ役割も持ちます。',
+    ex: ['サーモスタット（温度で自動ON/OFF）', '暗くなると点灯する街灯', '電池の残量警告', 'コンピュータの演算回路', 'ボタンの組み合わせ判定']
+  },
+  {
+    id: 'time', name: '時間をつくる（充放電）', pats: ['rc', 'astable', 'schmitt'],
+    lead: 'コンデンサがゆっくり充電・放電される性質を利用して、「時間の長さ」を作る回路です。',
+    why: '抵抗とコンデンサの組み合わせで「何秒かかるか」を決められます。時定数 τ = R × C という簡単な式で、マイクロ秒から数分まで自由に設計できます。タイマー、遅延、発振、ノイズ除去など、時間に関わるほとんどの回路の基本原理です。',
+    ex: ['電源投入時のリセット遅延', 'ボタンのチャタリング除去', 'タイマー（一定時間後にOFF）', 'カメラのフラッシュの充電']
+  }
+];
+
+/* 各パターンの目的（何がうれしいか・どこで使うか） */
+const USES = {
+  divider: { why: '抵抗2本だけで、電源電圧から好きな電圧を取り出せます。また、センサーの抵抗値の変化を「電圧の変化」に変えて、マイコンで読めるようにできます。部品が少なく安価で、あらゆる回路の中に隠れています。', ex: ['明るさセンサー（CdS）や温度センサー（サーミスタ）の読み取り', '電池電圧をマイコンで測る（高い電圧を下げて読む）', 'オペアンプやトランジスタの基準電圧づくり', 'ボリューム（可変抵抗）による音量・明るさ調整'] },
+  led: { why: 'LEDを壊さずに、狙った明るさで光らせられます。LEDは少し電圧を上げるだけで電流が急増して焼けるため、抵抗で電流を決めることが必須です。表示ランプは電子機器の状態を人に伝えるいちばん身近な方法です。', ex: ['電源ランプ・充電中ランプ', '家電の表示パネル', 'イルミネーション', 'マイコンのデバッグ表示'] },
+  rc: { why: '「ゆっくり変化する電圧」を作れます。充電にかかる時間を R と C で決められるので、タイマーや遅延回路の基本になります。また、急な変化をなめらかにする性質はノイズ除去にも使われます。', ex: ['電源ON時のマイコンのリセット遅延', 'ボタンのチャタリング（接点のバタつき）除去', '555タイマーやシュミット発振の時間決め', 'カメラのフラッシュ（充電して一気に放電）'] },
+  lpf: { why: '必要なゆっくりした信号を残しながら、高い周波数のノイズを取り除けます。部品2つでできる最も簡単なフィルタで、まずノイズに困ったら試す定番です。', ex: ['センサー値のギザギザを取る', 'PWM信号をなめらかなアナログ電圧に変える（簡易DAコンバータ）', 'スピーカーのウーファー（低音）用の帯域分割', 'ADコンバータの前のノイズ除去'] },
+  rlc: { why: 'LとCは特定の周波数（共振周波数）でだけ強く反応します。この性質で、たくさんの電波の中から1つの放送局だけを選んだり、正確な周波数の発振を作ったりできます。', ex: ['ラジオ・テレビの選局', 'ワイヤレス給電（Qi充電）', 'ICカード（Suicaなど）の通信', '高周波の発振回路'] },
+  halfwave: { why: 'コンセントの交流を、電子回路で使える直流に変えます。ダイオード1つとコンデンサ1つでできる最も簡単な整流回路です。', ex: ['簡単なACアダプタ', '電源回路の学習用', '交流信号の大きさを測る回路（ピーク検出）'] },
+  bridge: { why: '交流のプラス側とマイナス側の両方を使うので、半波整流より効率が良く、リップル（電圧の揺れ）も小さくなります。家庭用電源から直流を作るときの定番です。', ex: ['ACアダプタ・充電器', 'パソコンや家電の電源回路', 'モーターや電磁石の直流電源'] },
+  cw: { why: '大きく重い変圧器を使わずに、ダイオードとコンデンサだけで何倍もの高電圧を作れます。段数を増やせば数万ボルトも可能です。ただし大きな電流は取り出せないので、「高電圧・小電流」が必要な用途で活躍します。', ex: ['粒子加速器（1932年、原子核の人工変換に初成功）', 'コピー機・レーザープリンタの帯電', '空気清浄機・イオン発生器', 'ブラウン管テレビの高電圧', 'X線装置'] },
+  zener: { why: '入力電圧が多少変わっても、出力をほぼ一定に保てます。部品2つでできる最も簡単な安定化電源で、正確な基準電圧づくりや、過電圧から回路を守るのにも使います。', ex: ['基準電圧（ADコンバータの基準など）', 'マイコン入力の過電圧保護', '小電流の簡易電源'] },
+  reg: { why: '揺れのある直流から、ぴったり 5 V の安定した電源を作れます。マイコンやロジックICは電源電圧が揺れると誤動作するため、ほぼ必ずレギュレータを通します。3本足のICひとつで済む手軽さも魅力です。', ex: ['Arduino などマイコンボードの電源', 'ロジック回路の 5 V 電源', '車の12 V から 5 V を作る'] },
+  trsw: { why: 'マイコンが出せる弱い信号（数mA）で、大きな電流（数百mA〜数A）を流す機器を操作できます。マイコンで「現実のもの」を動かすときに必ず登場する回路です。', ex: ['マイコンでモーター・ファンを回す', 'リレーで家電のコンセントをON/OFF', 'たくさんのLEDをまとめて点灯', 'ブザーの駆動'] },
+  inv: { why: '信号を正確な倍率で大きくできます。増幅率が抵抗2本の比だけで決まるので、部品のばらつきや温度に左右されにくいのが強みです。向きが反転するのは欠点に見えますが、入力に抵抗を何本もつなぐと信号を「足し算」できるため、音声ミキサーに最適です。', ex: ['オーディオのプリアンプ', '複数の音を混ぜるミキサー（加算回路）', 'センサーの微小信号をマイコンで読める大きさに', '光センサーの電流を電圧に変換', '音量（ボリューム）調整'] },
+  comp: { why: '「設定値を超えたかどうか」を自動で判定できます。連続的に変わるアナログの量を、H/L のデジタル信号に変えるので、マイコンやロジック回路にそのまま渡せます。', ex: ['温度が上がったらファンを回す', '暗くなったら街灯をつける', '電池の電圧低下を知らせる', '水位センサーでポンプを止める'] },
+  astable: { why: 'ICひとつと抵抗・コンデンサだけで、安定したリズムを作れます。周期を部品の値で自由に決められ、出力はそのままLEDやブザーを動かせる力があります。マイコンを使わずに「点滅」「音」「クロック」を作れる手軽さで、50年以上使われています。', ex: ['LEDの点滅・ウインカー', 'ブザーの発音（周波数を上げると音になる）', 'マイコンなしのLED調光・モーター速度制御（PWM）', 'デジタル回路のクロック', '電子楽器（アタリパンク・シンセ）'] },
+  schmitt: { why: 'ICの1回路と R・C 各1個という最小の部品で発振器が作れます。部品がとても少ないので、ちょっとしたクロックやブザー音が欲しいときに便利です。シュミットトリガ自体も、ノイズの多い信号をきれいなH/Lに整える用途で重宝します。', ex: ['簡易クロック・ブザー', 'スイッチのチャタリング除去', 'ゆっくり変わるセンサー信号を確実にH/Lにする', 'タッチセンサー（容量の変化を周波数で測る）'] },
+  logic: { why: 'H/L（1/0）の組み合わせで判断や計算ができます。NAND ゲートだけであらゆる論理回路（足し算、記憶、比較）が作れるため「万能ゲート」と呼ばれます。コンピュータはこれを何十億個も組み合わせたものです。', ex: ['コンピュータの演算回路（加算器）', '「両方のボタンを押したら動く」安全回路', 'フリップフロップ（1ビットの記憶）', '信号の選択・切り替え'] }
+};
+
+/*
+  ステップ再生の台本
+  to: このシーンの終わりのシミュレーション時刻[s]  dur: 再生にかける実時間[s]
+  hi: 強調する部品  vals: 表示する値  sw/set: シーン開始時に変える部品の状態  win: スコープの表示時間
+  vals の書式  n:プローブ名（その点の電圧） v:部品（端子間電圧） vr:部品（右−左の電圧） i:部品（電流） ia:部品（電流の大きさ） st:部品:キー
+*/
+const GUIDES = {
+  divider: [
+    { h: '電源が電圧をかける', to: 0.002, dur: 2.5, hi: ['V1'], vals: [['n:Vin', '電源の＋側']], text: '電源 V1 が 9 V の電圧をかけます。配線の色に注目してください。V1 の＋側につながる配線は高い電圧（赤）、GND側は 0 V（灰色）で表示されています。' },
+    { h: '電流が流れる', to: 0.004, dur: 4, hi: ['R1', 'R2'], vals: [['i:R1', 'R1の電流'], ['i:R2', 'R2の電流']], text: '電流は V1 の＋ → R1 → R2 → GND → V1 の− と一周します。動く点が電流の流れです。道が1本なので、R1 と R2 には同じ 0.45 mA が流れます。' },
+    { h: '抵抗ごとに電圧が下がる', to: 0.006, dur: 4, hi: ['R1', 'R2'], vals: [['v:R1', 'R1の両端'], ['v:R2', 'R2の両端']], text: '電流が抵抗を通ると、そのぶん電圧が下がります（電圧降下 = 電流 × 抵抗）。R1 で 4.5 V、R2 で 4.5 V 下がり、合計で電源の 9 V になります。配線の色が R1 を境に変わっているのが分かります。' },
+    { h: '真ん中の電圧を取り出す', to: 0.008, dur: 3, hi: ['R2'], vals: [['n:Vout', '出力 Vout']], text: 'R1 と R2 の間の点からは、9 V の半分の 4.5 V が取り出せます。比率は Vout = 9 V × R2 ÷（R1 + R2）。このあと R2 をタップして値を変えると、出力電圧を自由に変えられます。' }
+  ],
+  led: [
+    { h: 'スイッチOFF', to: 0.002, dur: 2.5, sw: { SW1: false }, hi: ['SW1'], vals: [['i:LED1', 'LEDの電流']], text: 'スイッチが開いているので、回路が途中で切れています。電流が流れる道がないので LED は消えたまま。SW1 の手前までは電源の 5 V がかかっています（赤い配線）。' },
+    { h: 'スイッチON → 電流が一周', to: 0.004, dur: 4, sw: { SW1: true }, hi: ['SW1', 'R1', 'LED1'], vals: [['i:LED1', 'LEDの電流']], text: 'スイッチが閉じると、電流が V1 → SW1 → R1 → LED1 → GND と一周し、LED が光ります。点の流れで、電流の通り道を目で追ってみてください。' },
+    { h: '電圧の分かれ方', to: 0.006, dur: 4, hi: ['LED1', 'R1'], vals: [['v:LED1', 'LEDの両端'], ['v:R1', 'R1の両端']], text: 'LED の両端は約 1.9 V でほぼ一定です（順方向電圧）。残りの 5 − 1.9 = 3.1 V を R1 が受け持ちます。' },
+    { h: '抵抗が電流を決める', to: 0.008, dur: 3, hi: ['R1'], vals: [['i:R1', '電流']], text: '電流 = 3.1 V ÷ 330 Ω ≒ 9.4 mA。抵抗がないと、LED に流れる電流を制限するものがなくなり、一瞬で壊れてしまいます。R1 は LED を守る役目です。' }
+  ],
+  rc: [
+    { h: '電源が5Vに → 充電開始', to: 0.0005, dur: 4, hi: ['V1', 'R1'], vals: [['n:Vin', '入力'], ['v:C1', 'C1の電圧'], ['i:R1', '充電電流']], text: '方形波電源が 5 V を出しました。C1 はまだ空っぽ（0 V）なので、R1 の両端に 5 V がまるごとかかり、大きな電流（約 5 mA）が C1 へ流れ込みます。' },
+    { h: '電荷がたまっていく', to: 0.01, dur: 7, hi: ['C1'], vals: [['v:C1', 'C1の電圧'], ['i:R1', '充電電流']], text: 'C1 の極板に＋と−の電荷がたまっていきます（C1 の横の ＋ − マークに注目）。電荷が増えるほど C1 の電圧が上がります。10 ms（= R×C、時定数 τ）で 5 V の約 63 % に達します。' },
+    { h: '充電はだんだんゆっくりに', to: 0.0249, dur: 6, hi: ['R1', 'C1'], vals: [['v:C1', 'C1の電圧'], ['i:R1', '充電電流']], text: 'C1 の電圧が上がると、R1 にかかる電圧（5 V − Vc）が小さくなるので、流れ込む電流も細くなります。点の流れが遅くなっていくのが分かります。だから充電は最初は速く、だんだんゆっくりになります。' },
+    { h: '電源が0Vに → 放電', to: 0.035, dur: 6, hi: ['C1', 'R1'], vals: [['v:C1', 'C1の電圧'], ['i:R1', '電流（−は逆向き）']], text: '電源が 0 V になりました。今度は C1 にたまった電荷が R1 を通って出ていきます（放電）。電流の向きが逆になり、点が逆方向に流れているのが分かります。' },
+    { h: 'ゆっくりさを利用する', to: 0.05, dur: 5, hi: ['C1'], vals: [['v:C1', 'C1の電圧']], text: '放電も充電と同じカーブで、最初は速く、だんだんゆっくり進みます。この「急には変われない」性質を使って、タイマーやノイズ除去が作られます。' }
+  ],
+  lpf: [
+    { h: '入力が上がる', to: 0.00025, dur: 5, hi: ['V1', 'R1'], vals: [['n:Vin', '入力'], ['n:Vout', '出力']], text: '入力の電圧が上がると、R1 を通って C1 に電流が流れ込み、充電が始まります。でも C1 はすぐには電圧が上がりません。出力は入力より遅れてついていきます。' },
+    { h: '遅れて、小さくなる', to: 0.002, dur: 7, hi: ['C1'], vals: [['n:Vin', '入力'], ['n:Vout', '出力']], text: '入力が下がり始めても、C1 はまだ追いつこうと充電中です。そのため出力の山は入力より遅れ、高さも低くなります。1 kHz では振幅が約 0.7 倍になります。' },
+    { h: 'ゆっくりな信号（100 Hz）', to: 0.022, dur: 6, set: { V1: { f: 100 } }, win: 0.03, hi: ['C1'], vals: [['n:Vin', '入力'], ['n:Vout', '出力']], text: '周波数を 100 Hz に下げました。ゆっくりした変化なら C1 の充電が十分に間に合うので、出力は入力とほぼ同じになります。低い周波数は「通す」のです。' },
+    { h: '速い信号（10 kHz）', to: 0.0245, dur: 6, set: { V1: { f: 10000 } }, win: 0.0005, hi: ['C1'], vals: [['n:Vin', '入力'], ['n:Vout', '出力']], text: '10 kHz にすると、C1 が充電しきる前に入力が反転してしまい、出力はほとんど揺れません。高い周波数のノイズは C1 を通って GND へ逃げていきます。これがローパス（低域通過）フィルタです。' }
+  ],
+  rlc: [
+    { h: '電圧がかかる', to: 0.00008, dur: 6, hi: ['V1', 'L1'], vals: [['i:L1', 'コイルの電流'], ['v:C1', 'C1の電圧']], text: '電源が 5 V に切り替わりました。コイル L1 は電流の急な変化をきらうので、電流は 0 からゆっくり増えていきます。' },
+    { h: 'C1を通り越して充電', to: 0.00031, dur: 6, hi: ['L1', 'C1'], vals: [['i:L1', 'コイルの電流'], ['v:C1', 'C1の電圧']], text: 'C1 が 5 V に達しても、コイルは「流れ続けよう」とします（重い水車のような慣性）。そのため C1 は 5 V を通り越し、約 8.5 V まで充電されます（オーバーシュート）。' },
+    { h: '電流が逆流 → 振動', to: 0.0013, dur: 7, hi: ['L1', 'C1'], vals: [['i:L1', 'コイルの電流'], ['v:C1', 'C1の電圧']], text: '電圧が高くなりすぎた C1 が、今度はコイルへ電流を押し戻します。点の流れが逆向きになるのに注目してください。エネルギーが C1（電気）と L1（磁気）の間を行ったり来たりして、電圧が振動します。' },
+    { h: 'だんだん収まる', to: 0.005, dur: 6, hi: ['R1'], vals: [['v:C1', 'C1の電圧']], text: 'R1 が往復のたびにエネルギーを熱に変えるので、振動は少しずつ小さくなり 5 V に落ち着きます（減衰振動）。振動の速さは L と C の値だけで決まります（約 1.6 kHz）。' }
+  ],
+  halfwave: [
+    { h: 'プラスの山でC1を充電', to: 0.005, dur: 6, hi: ['D1', 'C1'], vals: [['n:Vin', '交流入力'], ['n:Vout', 'C1の電圧'], ['i:D1', 'D1の電流']], text: '交流の電圧がプラスへ上がります。入力が C1 の電圧より高いあいだ、ダイオード D1 が電流を通し、C1 を充電します。C1 は入力の山（10 V）より約 0.7 V 低い電圧まで充電されます。' },
+    { h: 'D1が電流を止める', to: 0.012, dur: 6, hi: ['D1', 'C1', 'R1'], vals: [['n:Vin', '交流入力'], ['n:Vout', 'C1の電圧'], ['i:D1', 'D1の電流']], text: '山を過ぎて入力が下がると、入力が C1 の電圧より低くなります。ダイオードは逆向きには電流を流さない（逆止弁）ので、D1 の電流が止まります。このあいだ、R1 に電流を送っているのは C1 です。' },
+    { h: 'マイナスの半周期', to: 0.02, dur: 6, hi: ['C1', 'R1'], vals: [['n:Vin', '交流入力'], ['n:Vout', 'C1の電圧']], text: '入力がマイナスでも、D1 が止めているので電源から電流は来ません。C1 は自分の電荷を R1 に少しずつ渡すので、電圧がゆっくり下がります。' },
+    { h: 'くり返して直流に', to: 0.065, dur: 6, hi: ['C1'], vals: [['n:Vout', '出力']], text: '次の山でまた D1 が開いて C1 を補充します。これをくり返すことで、出力はほぼ一定の直流になります。少しだけ残る上下の揺れを「リップル」と呼びます。' }
+  ],
+  bridge: [
+    { h: 'A点が＋のとき', to: 0.005, dur: 6, hi: ['D1', 'D4', 'R1'], vals: [['n:A点', 'A点'], ['n:Vout', '出力'], ['ia:D1', 'D1の電流'], ['ia:D4', 'D4の電流']], text: '交流電源の左（A点）が＋の半周期です。電流は A → D1 → 出力（上の線）→ R1・C1 → GND → D4 → 電源の右 と流れます。D2 と D3 は逆向きなので流れません。' },
+    { h: 'B点が＋のとき', to: 0.015, dur: 7, hi: ['D2', 'D3', 'R1'], vals: [['n:A点', 'A点'], ['n:Vout', '出力'], ['ia:D2', 'D2の電流'], ['ia:D3', 'D3の電流']], text: '今度は電源の右（B点）が＋になりました。電流は B → D2 → 出力 → R1・C1 → GND → D3 → A と流れます。電源の向きは逆になったのに、R1 を流れる向きは同じ（上から下）です。' },
+    { h: '両方の半周期を使う', to: 0.045, dur: 6, hi: ['C1'], vals: [['n:Vout', '出力']], text: 'プラスでもマイナスでも C1 が充電されるので、半波整流の2倍の頻度（100 Hz）で補充されます。そのぶんリップルが小さく、効率の良い直流になります。' }
+  ],
+  cw: [
+    { h: '入力が＋へ', to: 0.00025, dur: 6, hi: ['V1', 'C1', 'D2', 'C2'], vals: [['n:Vin', '入力'], ['n:a1', 'a1点'], ['n:b1', 'b1点']], text: '交流の入力が＋に上がります。C1 はまだ空なので、a1 点の電圧も入力と一緒に上がります。a1 が b1 より高くなると、D2 を通って C2 に電荷が流れ込みます。' },
+    { h: '入力が−へ：C1を充電', to: 0.00075, dur: 7, hi: ['D1', 'C1'], vals: [['n:Vin', '入力'], ['n:a1', 'a1点'], ['vr:C1', 'C1の電圧']], text: '入力が−に下がると、a1 点も下がろうとします。0 V より下がりかけたところで D1 が電流を通し、GND から C1 を充電します。C1 には右側が＋になる向きに、入力の振幅ぶん（約 10 V）の電圧がたまります。' },
+    { h: '再び＋へ：電圧が上乗せ', to: 0.00125, dur: 7, hi: ['C1', 'D2', 'C2'], vals: [['n:Vin', '入力'], ['n:a1', 'a1点'], ['n:b1', 'b1点']], text: '入力がまた＋になると、入力の電圧に C1 の電圧が上乗せされ（電池を直列につなぐのと同じ）、a1 点は入力より高く押し上げられます。C1 の電荷は D2 を通って C2 へ移ります。最初の数周期は電荷を分け合うので低めですが、くり返すうちに a1 点の山は約 20 V（入力 10 V + C1 10 V）まで上がります。' },
+    { h: 'バケツリレーで右へ', to: 0.004, dur: 8, hi: ['C3', 'D3', 'C4', 'D4'], vals: [['n:b1', 'b1点'], ['n:Vout', '出力']], text: '同じことが2段目（C3・D3・C4・D4）でも起こります。電荷がダイオードを通ってバケツリレーのように右へ運ばれ、段ごとに電圧が積み上がっていきます。' },
+    { h: '約4倍の電圧で安定', to: 0.025, dur: 6, hi: ['C4', 'R1'], vals: [['n:Vout', '出力'], ['n:Vin', '入力']], text: '何十周期もくり返すと、出力は入力の振幅の約4倍（約 37 V、ダイオードの電圧降下ぶん少し低い）で落ち着きます。段を増やせば、さらに高い電圧も作れます。' }
+  ],
+  zener: [
+    { h: '12Vがかかる', to: 0.002, dur: 3, hi: ['V1', 'R1'], vals: [['n:Vout', '出力']], text: '電源 12 V が R1 を通して出力側にかかります。ツェナーダイオード ZD1 は、カソード（線のある側）を＋側に向けた「逆向き」につながれています。' },
+    { h: 'ZD1が電圧を押さえる', to: 0.004, dur: 4, hi: ['ZD1'], vals: [['n:Vout', '出力'], ['ia:ZD1', 'ZD1の電流']], text: '出力が 5.1 V を超えようとすると、ZD1 が急に電流を流し始め、それ以上の電圧を GND へ逃がします。こうして出力は 5.1 V に固定されます。' },
+    { h: '電流の分かれ方', to: 0.006, dur: 4, hi: ['R1', 'R2', 'ZD1'], vals: [['i:R1', 'R1'], ['i:R2', '負荷R2'], ['ia:ZD1', 'ZD1']], text: 'R1 を流れる電流（約 15 mA）は、負荷 R2 と ZD1 に分かれます。負荷が電流をたくさん使えば ZD1 の分が減り、少なければ増える。ZD1 が「調整役」となって電圧を保ちます。' },
+    { h: '入力が変わっても一定', to: 0.008, dur: 4, set: { V1: { V: 15 } }, hi: ['V1', 'ZD1'], vals: [['n:Vout', '出力'], ['ia:ZD1', 'ZD1の電流']], text: '入力を 15 V に上げました。増えた分は ZD1 の電流が増えることで吸収され、出力はほぼ 5.1 V のままです。' }
+  ],
+  reg: [
+    { h: '整流してC1を充電', to: 0.005, dur: 6, hi: ['D1', 'C1'], vals: [['n:Vin', '7805の入力'], ['n:Vout', '出力']], text: '交流を D1 で整流し、C1 に充電していきます。7805 の入力電圧（Vin）がだんだん上がっていきます。' },
+    { h: '7805が5Vに整える', to: 0.02, dur: 6, hi: ['U1'], vals: [['n:Vin', '7805の入力'], ['n:Vout', '出力']], text: '入力が 7 V（5 V + 約 2 V）を超えると、7805 は出力をぴったり 5 V に保ちます。入力と出力の差の電圧は、7805 が熱として捨てています。' },
+    { h: '揺れても出力は一定', to: 0.08, dur: 7, hi: ['C1', 'U1', 'C2'], vals: [['n:Vin', '7805の入力'], ['n:Vout', '出力']], text: 'C1 の電圧はリップルで 9〜11 V と揺れていますが、出力は 5 V の直線です。スコープの2本の線を見比べてください。揺れが 7 V を下回らない限り、出力は乱れません。' }
+  ],
+  trsw: [
+    { h: '入力H：ベースに電流', to: 0.01, dur: 4, hi: ['V1', 'R1', 'Q1'], vals: [['n:Vin', '入力'], ['st:Q1:ib', 'ベース電流']], text: '入力 V1 が 5 V になりました。R1 を通してトランジスタのベース（B）に小さな電流（約 0.43 mA）が流れ込みます。' },
+    { h: '大きな電流がON', to: 0.2, dur: 5, hi: ['Q1', 'LED1', 'R2'], vals: [['st:Q1:ib', 'ベース電流'], ['st:Q1:ic', 'コレクタ電流'], ['n:Vc', 'コレクタ電圧']], text: 'ベース電流が「スイッチを入れる合図」になり、コレクタ（C）からエミッタ（E）へ約 20 倍の 9 mA が流れます。V2 → R2 → LED1 → Q1 → GND の道ができ、LED が点灯します。' },
+    { h: '入力L：OFF', to: 0.3, dur: 5, hi: ['Q1', 'LED1'], vals: [['n:Vin', '入力'], ['st:Q1:ib', 'ベース電流'], ['st:Q1:ic', 'コレクタ電流']], text: '入力が 0 V になると、ベース電流が止まります。するとコレクタ電流も止まり、LED が消えます。小さな電流で、大きな電流の ON/OFF を操っています。' },
+    { h: '点滅のくり返し', to: 1.5, dur: 6, hi: ['Q1'], vals: [['n:Vin', '入力'], ['n:Vc', 'コレクタ電圧']], text: '入力が H のときコレクタは約 0.1 V（ON）、L のときは高い電圧（OFF）。入力と逆になるので、この回路は NOT ゲートとしても働きます。' }
+  ],
+  inv: [
+    { h: '入力が＋へ', to: 0.0002, dur: 6, hi: ['V1', 'R1', 'U1'], vals: [['n:Vin', '入力'], ['pin:U1:0', '−入力'], ['n:Vout', '出力']], text: '入力が＋1 V へ上がります。オペアンプは「＋入力と−入力の電圧を等しくしよう」と出力を動かします。＋入力は GND（0 V）なので、−入力も 0 V に保たれます（仮想短絡）。' },
+    { h: '同じ電流がR2へ → −3倍', to: 0.00025, dur: 5, hi: ['R1', 'R2'], vals: [['i:R1', 'R1の電流'], ['i:R2', 'R2の電流'], ['n:Vout', '出力']], text: 'R1 には 1 V ÷ 10 kΩ = 0.1 mA が流れます。オペアンプの入力には電流が入らないので、この電流はそのまま R2 を通って出力へ流れます。R2（30 kΩ）の両端は 0.1 mA × 30 kΩ = 3 V。−入力が 0 V なので、出力は −3 V になります。' },
+    { h: '入力が−なら出力は＋', to: 0.00075, dur: 7, hi: ['R1', 'R2', 'U1'], vals: [['n:Vin', '入力'], ['i:R1', 'R1の電流'], ['n:Vout', '出力']], text: '入力が −1 V に下がると、電流の向きが逆になり（点の流れに注目）、出力は ＋3 V になります。入力が＋なら出力は−、−なら＋。形はそのままで、常に入力の −3 倍です。' },
+    { h: '増幅しすぎると…', to: 0.003, dur: 6, set: { R2: { R: 150000 } }, hi: ['R2'], vals: [['n:Vin', '入力'], ['n:Vout', '出力']], text: 'R2 を 150 kΩ にすると増幅率は −15 倍。でも出力は電源（±12 V）を超えられないので、波形の頭が平らに切れてしまいます（クリップ）。音ならひずんだ音になります。' }
+  ],
+  comp: [
+    { h: '基準電圧をつくる', to: 0.002, dur: 4, hi: ['R1', 'R2'], vals: [['n:Vref', '基準電圧'], ['n:Vin', '入力']], text: 'R1 と R2 の分圧で、−入力に 2 V の「基準」を作っています。この 2 V と入力を比べます。' },
+    { h: '入力が高い → H', to: 0.0105, dur: 6, hi: ['U1'], vals: [['n:Vin', '入力'], ['n:Vref', '基準'], ['n:Vout', '出力']], text: '入力は基準より高い状態です。わずかな差でも 10 万倍に増幅されるので、出力は上限（約 4.9 V）に張り付きます。' },
+    { h: '下回った瞬間に L', to: 0.0115, dur: 6, hi: ['U1'], vals: [['n:Vin', '入力'], ['n:Vref', '基準'], ['n:Vout', '出力']], text: '入力が 2 V を下回った瞬間、出力が一気に 0.1 V へ切り替わります。途中の値はほとんどとりません。' },
+    { h: 'アナログ → デジタル', to: 0.022, dur: 6, hi: ['U1'], vals: [['n:Vin', '入力'], ['n:Vout', '出力']], text: '入力が再び 2 V を超えると H に戻ります。なめらかに変わるアナログの量が、H/L の2択（デジタル）に変換されました。' }
+  ],
+  astable: [
+    { h: '電源ON：出力H', to: 0.02, dur: 4, hi: ['U1', 'LED1'], vals: [['n:Vc', 'C1の電圧'], ['n:OUT', '出力'], ['st:U1:q', '555の状態']], text: '電源が入った直後、C1 は 0 V。TRIG が VCC の 1/3（1.67 V）より低いので、555 の内部のフリップフロップがセットされ、出力が H になって LED が点灯します。' },
+    { h: 'C1を充電', to: 0.6, dur: 7, hi: ['R1', 'R2', 'C1'], vals: [['n:Vc', 'C1の電圧'], ['i:R1', '充電電流']], text: 'C1 は VCC から R1 → R2 を通って充電されていきます。C1 の電圧が少しずつ上がっていきます。' },
+    { h: '2/3 VCCで反転', to: 0.66, dur: 5, hi: ['U1'], vals: [['n:Vc', 'C1の電圧'], ['n:OUT', '出力'], ['st:U1:q', '555の状態']], text: 'C1 が 2/3 VCC（3.33 V）に達すると THR が反応してフリップフロップがリセット。出力が L になり LED が消え、同時に DIS 端子が内部で GND につながります。' },
+    { h: 'DISから放電', to: 0.99, dur: 7, hi: ['R2', 'C1', 'U1'], vals: [['n:Vc', 'C1の電圧'], ['i:R2', 'R2の電流']], text: 'C1 の電荷は R2 を通って DIS 端子へ流れ出します（点の流れが逆向きに）。1/3 VCC（1.67 V）まで下がると、再びセットされて出力が H に戻ります。' },
+    { h: '発振が続く', to: 2.6, dur: 7, hi: ['U1', 'C1'], vals: [['n:Vc', 'C1の電圧'], ['n:OUT', '出力']], text: '充電と放電がくり返され、C1 は 1.67〜3.33 V を往復し、出力は H/L を交互に出し続けます。これが発振です。周期 ≒ 0.693 ×（R1 + 2×R2）× C1 ≒ 0.72 秒。' }
+  ],
+  schmitt: [
+    { h: '出力H：C1を充電', to: 0.004, dur: 5, hi: ['U1', 'R1', 'C1'], vals: [['n:Vc', 'C1の電圧'], ['n:Vout', '出力']], text: '最初、C1 は 0 V で入力は L。NOT ゲートなので出力は H（5 V）。出力から R1 を通して C1 が充電されていきます。' },
+    { h: '2.9Vで出力がLに', to: 0.0095, dur: 6, hi: ['U1'], vals: [['n:Vc', 'C1の電圧'], ['n:Vout', '出力']], text: 'C1 が上側のしきい値 2.9 V を超えた瞬間、出力が L（0 V）に反転します。' },
+    { h: '放電：1.7VでHに', to: 0.0155, dur: 6, hi: ['R1', 'C1'], vals: [['n:Vc', 'C1の電圧'], ['i:R1', 'R1の電流']], text: '出力が 0 V になったので、C1 の電荷が R1 を通って出力側へ流れ出します（放電）。下側のしきい値 1.7 V まで下がると出力が再び H になります。' },
+    { h: '2つのしきい値が鍵', to: 0.04, dur: 6, hi: ['U1'], vals: [['n:Vc', 'C1の電圧'], ['n:Vout', '出力']], text: 'しきい値が2つ（2.9 V と 1.7 V）あるので、C1 はその間を往復し続けます。普通の NOT ゲート（しきい値1つ）では、しきい値付近で止まってしまい発振しません。' }
+  ],
+  logic: [
+    { h: 'A=L, B=L', to: 0.005, dur: 2.5, sw: { SW1: false, SW2: false }, hi: ['SW1', 'SW2', 'U1'], vals: [['n:A', '入力A'], ['n:B', '入力B'], ['n:OUT', '出力']], text: '両方のスイッチが OFF。R1・R2（プルダウン抵抗）が入力を 0 V（L）に保ちます。NAND は「両方 H のときだけ L」なので、出力は H。LED が点灯します。' },
+    { h: 'A=H, B=L', to: 0.01, dur: 2.5, sw: { SW1: true }, hi: ['SW1', 'U1'], vals: [['n:A', '入力A'], ['n:B', '入力B'], ['n:OUT', '出力']], text: 'SW1 を ON にして A を H（5 V）にしました。B はまだ L なので、出力は H のままです。' },
+    { h: 'A=H, B=H', to: 0.015, dur: 2.5, sw: { SW2: true }, hi: ['SW2', 'U1', 'LED1'], vals: [['n:A', '入力A'], ['n:B', '入力B'], ['n:OUT', '出力']], text: '両方 H になった！ NAND の出力は L（0 V）になり、LED が消えます。' },
+    { h: 'A=L, B=H', to: 0.02, dur: 2.5, sw: { SW1: false }, hi: ['SW1', 'U1'], vals: [['n:A', '入力A'], ['n:B', '入力B'], ['n:OUT', '出力']], text: 'A を L に戻すと出力は H に。4通りの組み合わせのうち、出力が L になるのは「両方 H」の1通りだけでした。これが NAND の真理値表です。' }
+  ]
+};
+if (false) module.exports = { PURPOSES, USES, GUIDES };
+
 /* ===== 回路工房 UI ===== */
 const $ = s => document.querySelector(s);
 const SHORT = { R: '抵抗', C: 'コンデンサ', L: 'コイル', SW: 'スイッチ', V: '直流電源', AC: '交流', SQ: '方形波', RAIL: '電源端子', GND: 'GND', D: 'ダイオード', LED: 'LED', Z: 'ツェナー', NPN: 'NPN', OPAMP: 'オペアンプ', T555: '555', REG: '7805', NOT: 'NOT', SCHMITT: '74HC14', GATE: 'ゲート' };
@@ -883,7 +1121,7 @@ const store = {
 let C = {};
 function readColors() {
   const cs = getComputedStyle(document.documentElement);
-  for (const k of ['paper', 'panel', 'ink', 'muted', 'line', 'grid', 'part', 'wire', 'accent', 'sel', 'vpos', 'vneg', 'vzero', 'led', 'scope', 'scope-grid', 'scope-axis', 'scope-txt', 'ch1', 'ch2', 'ch3', 'ch4'])
+  for (const k of ['paper', 'panel', 'ink', 'muted', 'line', 'grid', 'part', 'wire', 'accent', 'sel', 'vpos', 'vneg', 'vzero', 'led', 'scope', 'scope-grid', 'scope-axis', 'scope-txt', 'ch1', 'ch2', 'ch3', 'ch4', 'flow'])
     C[k] = cs.getPropertyValue('--' + k).trim() || '#888';
   C.ch = [C.ch1, C.ch2, C.ch3, C.ch4];
 }
@@ -1041,6 +1279,15 @@ function drawCircuit(g, cam, dpr, W, H, circ, o) {
     if (sel) { g.strokeStyle = rgba(C.sel, .45); g.lineWidth = Math.max(7, s * .3); g.beginPath(); g.moveTo(sx(w.x1), sy(w.y1)); g.lineTo(sx(w.x2), sy(w.y2)); g.stroke(); g.lineWidth = Math.max(1.6, s * .075); }
     g.strokeStyle = netCol(w.x1, w.y1); g.beginPath(); g.moveTo(sx(w.x1), sy(w.y1)); g.lineTo(sx(w.x2), sy(w.y2)); g.stroke();
   }
+  // 電流の流れ（配線）
+  if (o.flow) drawWireFlow(g, o.flow, s, sx, sy);
+  // ステップ再生で強調する部品
+  const hi = o.hi, pulse = .5 + .5 * Math.sin(performance.now() / 260);
+  if (hi) for (const c of circ.comps) if (hi.has(c.id)) {
+    const b = compBox(c), pad = .25, x = sx(b[0] - pad), y = sy(b[1] - pad), w = (b[2] - b[0] + 2 * pad) * s, h = (b[3] - b[1] + 2 * pad) * s;
+    g.fillStyle = rgba(C.accent, .08 + .1 * pulse); g.strokeStyle = rgba(C.accent, .55 + .45 * pulse); g.lineWidth = 2;
+    g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, Math.min(10, s * .4)) : g.rect(x, y, w, h); g.fill(); g.stroke();
+  }
   // 部品
   for (const c of circ.comps) {
     if (o.selComp === c.id || (o.selSet && o.selSet.comps.has(c.id))) {
@@ -1049,13 +1296,17 @@ function drawCircuit(g, cam, dpr, W, H, circ, o) {
     }
     g.save(); g.setTransform(dpr * s, 0, 0, dpr * s, dpr * sx(c.x), dpr * sy(c.y)); g.rotate((c.r || 0) * Math.PI / 2);
     g.lineWidth = Math.max(1.4, s * .065) / s;
-    const st = sim ? (sim.byId.get(c.id) || {}).st : null;
-    drawSymbol(g, c.t, c, st); g.restore();
+    const el = sim ? sim.byId.get(c.id) : null, st = el ? el.st : null;
+    if (hi && !hi.has(c.id) && c.t !== 'GND' && c.t !== 'RAIL') g.globalAlpha = .38;
+    drawSymbol(g, c.t, c, st);
+    if (el && c.t === 'C') drawCharge(g, sim.v(el.n[0]) - sim.v(el.n[1]), vmax);
+    g.globalAlpha = 1; g.restore();
+    if (o.flow && el && el.pi) drawCompFlow(g, c, el, o.flow, s, sx, sy);
   }
   // ラベル
-  if (o.labels !== false && s >= 14) {
+  if (o.labels !== false && s >= 11) {
     g.setTransform(dpr, 0, 0, dpr, 0, 0); g.textBaseline = 'middle';
-    const fs = Math.min(13, Math.max(9.5, s * .4));
+    const fs = Math.min(13, Math.max(9, s * .4));
     for (const c of circ.comps) {
       const v = valueStr(c);
       if (c.t === 'RAIL') {
@@ -1095,6 +1346,110 @@ function drawCircuit(g, cam, dpr, W, H, circ, o) {
     g.fillStyle = '#111'; g.font = `600 ${r * .85}px ${MONO}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(i + 1), X + r * 1.1, Y - r * 1.4);
   });
 }
+/* ---------- コンデンサの電荷 ---------- */
+function drawCharge(g, v, vmax) {
+  const r = Math.min(1, Math.abs(v) / Math.max(vmax, 1e-9));
+  if (r < 0.02) return;
+  const n = Math.max(1, Math.min(4, Math.round(r * 4))), sz = .075;
+  const plus = (x, y) => { g.beginPath(); g.moveTo(x - sz, y); g.lineTo(x + sz, y); g.moveTo(x, y - sz); g.lineTo(x, y + sz); g.stroke(); };
+  const minus = (x, y) => { g.beginPath(); g.moveTo(x - sz, y); g.lineTo(x + sz, y); g.stroke(); };
+  g.save(); g.lineWidth = .045; g.lineCap = 'round';
+  for (let k = 0; k < n; k++) {
+    const y = n === 1 ? 0 : -.3 + .6 * k / (n - 1);
+    g.strokeStyle = v > 0 ? C.vpos : C.vneg; (v > 0 ? plus : minus)(.68, y);
+    g.strokeStyle = v > 0 ? C.vneg : C.vpos; (v > 0 ? minus : plus)(1.32, y);
+  }
+  g.restore();
+}
+
+/* ---------- 電流の流れ（動く点） ---------- */
+function buildFlow(circ) {
+  const pts = new Set();
+  circ.wires.forEach(w => { pts.add(key(w.x1, w.y1)); pts.add(key(w.x2, w.y2)); });
+  circ.comps.forEach(c => pinPos(c).forEach(([x, y]) => pts.add(key(x, y))));
+  const P = [...pts].map(k => k.split(',').map(Number));
+  const segs = [], adj = new Map();
+  const addAdj = (k, i) => { if (!adj.has(k)) adj.set(k, []); adj.get(k).push(i); };
+  for (const w of circ.wires) {
+    const dx = Math.sign(w.x2 - w.x1), dy = Math.sign(w.y2 - w.y1);
+    const inner = P.filter(([x, y]) => onInterior(x, y, w)).map(([x, y]) => [x, y, (x - w.x1) * dx + (y - w.y1) * dy]).sort((a, b) => a[2] - b[2]);
+    const chain = [[w.x1, w.y1], ...inner.map(p => [p[0], p[1]]), [w.x2, w.y2]];
+    for (let i = 0; i + 1 < chain.length; i++) {
+      const a = chain[i], b = chain[i + 1], len = Math.abs(b[0] - a[0]) + Math.abs(b[1] - a[1]);
+      if (!len) continue;
+      const idx = segs.length; segs.push({ a, b, ka: key(...a), kb: key(...b), len, I: 0, ph: Math.random() });
+      addAdj(segs[idx].ka, idx); addAdj(segs[idx].kb, idx);
+    }
+  }
+  // 全域木（GND記号のある点を根に）
+  const gnd = new Set(circ.comps.filter(c => c.t === 'GND').map(c => key(...pinPos(c)[0])));
+  const seen = new Set(), order = [], parent = new Map();
+  const roots = [...adj.keys()].sort((a, b) => (gnd.has(b) ? 1 : 0) - (gnd.has(a) ? 1 : 0));
+  for (const r of roots) {
+    if (seen.has(r)) continue; seen.add(r); const q = [r];
+    while (q.length) {
+      const k = q.shift(); order.push(k);
+      for (const si of adj.get(k)) { const s = segs[si], o = s.ka === k ? s.kb : s.ka; if (!seen.has(o)) { seen.add(o); parent.set(o, [k, si]); q.push(o); } }
+    }
+  }
+  return { segs, order, parent, comp: new Map(), iref: 1e-3 };
+}
+function updateFlow(F, sim, circ, dtR) {
+  const inj = new Map();
+  for (const e of sim.els) {
+    if (!e.pi) continue;
+    const ps = pinPos(e.c);
+    ps.forEach(([x, y], k) => { const kk = key(x, y); inj.set(kk, (inj.get(kk) || 0) - e.pi[k]); });
+  }
+  const acc = new Map();
+  for (let i = F.order.length - 1; i >= 0; i--) {
+    const k = F.order[i], f = (inj.get(k) || 0) + (acc.get(k) || 0), p = F.parent.get(k);
+    if (!p) continue;
+    const s = F.segs[p[1]]; s.I = s.ka === k ? f : -f;
+    acc.set(p[0], (acc.get(p[0]) || 0) + f);
+  }
+  let mx = 0;
+  for (const s of F.segs) mx = Math.max(mx, Math.abs(s.I));
+  for (const e of sim.els) if (e.pi) for (const v of e.pi) mx = Math.max(mx, Math.abs(v));
+  F.iref = Math.max(mx, F.iref * Math.pow(0.5, dtR / 1.5), 1e-9);
+  const spd = I => { const a = Math.abs(I); if (a < F.iref * 2e-3 || a < 1e-10) return 0; return Math.sign(I) * 3.2 * Math.sqrt(a / F.iref); };
+  for (const s of F.segs) { s.v = spd(s.I); s.ph = (s.ph + s.v * dtR) % 1e6; }
+  for (const e of sim.els) {
+    if (!e.pi) continue;
+    let ph = F.comp.get(e.c.id); if (!ph) { ph = e.pi.map(() => Math.random()); F.comp.set(e.c.id, ph); }
+    for (let k = 0; k < ph.length; k++) ph[k] = (ph[k] + spd(e.pi[k]) * dtR) % 1e6;
+  }
+  F.spd = spd;
+}
+function dot(g, x, y, r) { g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); }
+function dotsAlong(g, x1, y1, x2, y2, len, ph, s, skip) {
+  const sp = .8, r = Math.max(2, s * .085), off = ((ph % sp) + sp) % sp;
+  for (let d = off; d < len; d += sp) {
+    const t = d / len; if (skip && t > skip[0] && t < skip[1]) continue;
+    dot(g, x1 + (x2 - x1) * t, y1 + (y2 - y1) * t, r);
+  }
+}
+function drawWireFlow(g, F, s, sx, sy) {
+  g.fillStyle = C.flow;
+  for (const sg of F.segs) if (sg.v) dotsAlong(g, sx(sg.a[0]), sy(sg.a[1]), sx(sg.b[0]), sy(sg.b[1]), sg.len, sg.ph, s);
+}
+function drawCompFlow(g, c, el, F, s, sx, sy) {
+  const ph = F.comp.get(c.id); if (!ph || !F.spd) return;
+  const ps = pinPos(c); g.setTransform(DPR_OF(g), 0, 0, DPR_OF(g), 0, 0); g.fillStyle = C.flow;
+  if (ps.length === 2) {
+    if (!F.spd(el.pi[0])) return;
+    const [a, b] = ps, len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    dotsAlong(g, sx(a[0]), sy(a[1]), sx(b[0]), sy(b[1]), len, ph[0], s, c.t === 'C' ? [.42, .58] : null);
+  } else if (ps.length > 2) {
+    const bx = compBox(c), cx = (bx[0] + bx[2]) / 2, cy = (bx[1] + bx[3]) / 2;
+    ps.forEach(([x, y], k) => {
+      if (!F.spd(el.pi[k])) return;
+      const len = Math.hypot(cx - x, cy - y); if (len < .3) return;
+      dotsAlong(g, sx(x), sy(y), sx(x + (cx - x) * .8), sy(y + (cy - y) * .8), len * .8, ph[k], s);
+    });
+  }
+}
+const DPR_OF = g => g.canvas === cv ? DPR : (devicePixelRatio || 1);
 function netOfPoint(sim, circ, x, y) {
   const n = sim.netAt(x, y); if (n >= 0) return n;
   for (const w of circ.wires) if (onInterior(x, y, w)) return sim.netAt(w.x1, w.y1);
@@ -1128,25 +1483,27 @@ function renderSymbolCanvas(canvas, t, scale) {
 const S = {
   circ: null, sel: null, mode: 'select', placeType: null, pending: null, cam: { x: 40, y: 40, s: 28 },
   sim: null, running: false, set: { dt: 1e-5, win: 0.01, speed: 1 }, pat: null, undo: [], topo: null,
-  buf: null, scopeOn: true
+  buf: null, scopeOn: true, flow: null, showFlow: true, guide: null
 };
 const cv = $('#cv'), ctx = cv.getContext('2d');
 let W = 0, H = 0, DPR = 1, dirty = true;
 
 function snapshot() { return JSON.stringify({ circ: S.circ, set: S.set, pat: S.pat, edited: S.edited }); }
-function pushUndo() { S.edited = true; S.undo.push(snapshot()); if (S.undo.length > 60) S.undo.shift(); $('#bUndo').disabled = false; }
+function pushUndo() { if (S.guide) endGuide(true); S.edited = true; S.undo.push(snapshot()); if (S.undo.length > 60) S.undo.shift(); $('#bUndo').disabled = false; }
 function restore(js, keepCam) {
   const o = JSON.parse(js); S.circ = o.circ; S.set = o.set; S.pat = o.pat; S.edited = !!o.edited;
   S.sel = null; S.pending = null; closeSheet(); changed(true);
   if (!keepCam) fitView();
 }
 function changed(structural) {
+  if (structural && S.guide && S.sim) endGuide(true);
   S.topo = topology(S.circ);
-  if (structural) { S.sim = null; S.buf = null; S.vsm = null; }
+  if (structural) { S.sim = null; S.buf = null; S.vsm = null; S.flow = null; }
   dirty = true; save(); updateTopbar();
 }
 function save() { store.set('kairo.current', JSON.parse(snapshot())); }
 function updateTopbar() {
+  if ($('#bSpeed')) updateSpeedChip();
   const p = PATTERNS.find(x => x.id === S.pat);
   $('#patName').textContent = p ? '／ ' + p.name : '';
   $('#bExplain').hidden = !p;
@@ -1155,18 +1512,22 @@ function updateTopbar() {
 
 /* ---------- シミュレーション ---------- */
 function startSim() {
-  S.sim = new Sim(S.circ, S.set.dt);
+  S.sim = new Sim(S.circ, S.set.dt); S.sim.trackCur = S.showFlow; S.flow = buildFlow(S.circ); S.vsm = null;
   S.buf = { t: [], v: S.circ.probes.map(() => []), next: 0, nets: S.circ.probes.map(p => netOfPoint(S.sim, S.circ, p.x, p.y)) };
   if (!S.sim.nets.hasGround && S.circ.comps.length) toast('GND がありません。GND を1つ置くと電圧が正しく決まります。');
 }
+function scopeWin() {
+  const G = S.guide; if (!G || G.to == null) return S.set.win;
+  return Math.min(S.set.win, Math.max(G.to, S.set.win / 20));
+}
 function sample() {
   const b = S.buf, sim = S.sim; if (sim.t < b.next) return;
-  b.next = sim.t + S.set.win / 600;
+  b.next = sim.t + scopeWin() / 600;
   b.t.push(sim.t); b.nets.forEach((n, i) => b.v[i].push(n >= 0 ? sim.v(n) : NaN));
   if (b.t.length > 1400) { const cut = b.t.length - 700; b.t.splice(0, cut); b.v.forEach(a => a.splice(0, cut)); }
 }
 function setRunning(on) {
-  S.running = on; const b = $('#bRun');
+  S.running = on; const b = $('#bRun'); b.disabled = false;
   b.textContent = on ? '⏸ 停止' : '▶ 実行'; b.classList.toggle('on', on);
 }
 function smoothVolts() {
@@ -1177,12 +1538,14 @@ function smoothVolts() {
   for (let i = 0; i < n; i++) { S.vsm[i] += (sim.x[i] - S.vsm[i]) * 0.08; m = Math.max(m, Math.abs(sim.x[i])); }
   S.vmax = Math.max(m, (S.vmax || 1) * 0.995);
 }
-function resetSim() { S.vsm = null; S.sim = null; S.buf = null; dirty = true; drawScope(); updateTime(); }
+function resetSim() { S.vsm = null; S.sim = null; S.buf = null; S.flow = null; dirty = true; drawScope(); updateTime(); }
 function updateTime() { $('#tdisp').textContent = 'SCOPE  t = ' + fmtSI(S.sim ? S.sim.t : 0, 's', 4); }
 
 let lastFrame = 0, infoTick = 0;
 function frame(ts) {
-  if (S.running) {
+  const dtR = Math.min(.05, Math.max(0, (ts - (lastFrame || ts)) / 1000)); lastFrame = ts;
+  if (S.guide) guideTick(ts);
+  else if (S.running) {
     if (!S.sim) startSim();
     const sim = S.sim, adv = S.set.win / (2.5 * 60) * S.set.speed;
     const n = Math.max(1, Math.round(adv / sim.dt)), t0 = performance.now();
@@ -1193,6 +1556,8 @@ function frame(ts) {
     }
     smoothVolts(); dirty = true; drawScope(); updateTime();
   }
+  if (S.sim && S.flow && S.showFlow) { updateFlow(S.flow, S.sim, S.circ, dtR); dirty = true; }
+  if (S.guide && S.guide.hi.size) dirty = true;
   if (dirty && !$('#v-edit').hidden) { render(); dirty = false; }
   if (++infoTick % 6 === 0) updateReadout();
   requestAnimationFrame(frame);
@@ -1206,7 +1571,7 @@ function resize() {
 }
 function render() {
   drawCircuit(ctx, S.cam, DPR, W, H, S.circ, {
-    sim: S.sim, vsm: S.vsm, vmax: S.vmax, selComp: S.sel && S.sel.c, selWire: S.sel && S.sel.w, selSet: S.sel && S.sel.m, topo: S.topo
+    sim: S.sim, vsm: S.vsm, vmax: S.vmax, flow: S.showFlow ? S.flow : null, hi: S.guide ? S.guide.hi : null, selComp: S.sel && S.sel.c, selWire: S.sel && S.sel.w, selSet: S.sel && S.sel.m, topo: S.topo
   });
   const s = S.cam.s, sx = x => x * s + S.cam.x, sy = y => y * s + S.cam.y;
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -1259,7 +1624,7 @@ function drawScope() {
     g.fillStyle = C['scope-txt']; g.font = `12px ${MONO}`; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText('パレットの「プローブ」で測定点をタップ', w / 2, h / 2); return;
   }
-  const tnow = S.sim ? S.sim.t : 0, win = S.set.win, t0 = tnow - win;
+  const tnow = S.sim ? S.sim.t : 0, win = scopeWin(), t0 = Math.max(0, tnow - win);
   let lo = Infinity, hi = -Infinity;
   if (b) b.v.forEach(a => { for (let i = 0; i < a.length; i++) if (b.t[i] >= t0 && isFinite(a[i])) { lo = Math.min(lo, a[i]); hi = Math.max(hi, a[i]); } });
   if (!isFinite(lo)) { lo = -1; hi = 1; }
@@ -1440,7 +1805,7 @@ function zoomAt(x, y, k) {
   const s = Math.max(8, Math.min(90, S.cam.s * k)); k = s / S.cam.s;
   S.cam = { s, x: x - (x - S.cam.x) * k, y: y - (y - S.cam.y) * k }; dirty = true;
 }
-function fitView() { if (W) { S.cam = camFit(S.circ, W, H - 40, 40); S.cam.y += 16; dirty = true; } }
+function fitView() { if (W) { S.cam = camFit(S.circ, W - 46, H - 24, 40); S.cam.y += 6; dirty = true; } }
 
 /* ---------- モードとパレット ---------- */
 const HINTS = {
@@ -1595,16 +1960,24 @@ function loadPattern(id) {
 }
 function openPattern(id) {
   const p = PATTERNS.find(x => x.id === id);
+  const U = USES[id], purs = PURPOSES.filter(q => q.pats.includes(id));
   openModal(`<div class="mtop"><div><div class="en">${p.cat}</div><h2>${p.name}</h2></div>${closeBtn}</div>
     <canvas class="big" id="mbig"></canvas>
+    <div class="mact"><button class="btn primary" id="mguide">▶ ステップ再生で動きを見る</button><button class="btn" id="mopen">${S.pat === id && !S.guide ? 'エディタに戻る' : '自由にシミュレーション'}</button></div>
+    <section class="purpose">
+      <h4>何のための回路？</h4><p>${U.why}</p>
+      <h4>使われているところ</h4><ul class="exlist">${U.ex.map(x => `<li>${x}</li>`).join('')}</ul>
+      ${purs.length ? `<div class="tags" style="margin-top:10px">${purs.map(q => `<button data-pur="${q.id}">目的：${q.name}</button>`).join('')}</div>` : ''}
+    </section>
     <h4>この回路の役割</h4><p>${p.role}</p>
     <h4>動作の流れ</h4><ol>${p.steps.map(s => `<li>${s}</li>`).join('')}</ol>
     <h4>波形の見どころ</h4><p>${p.watch}</p>
     <h4>試してみよう</h4><ul>${p.tries.map(s => `<li>${s}</li>`).join('')}</ul>
-    <h4>使っている部品</h4><div class="tags">${[...new Set(p.comps.map(c => c[0]))].filter(t => t !== 'GND').map(t => `<button data-doc="${t}">${SHORT[t]}</button>`).join('')}</div>
-    <div class="mact"><button class="btn primary" id="mopen">${S.pat === id ? 'エディタに戻る' : 'エディタで開いてシミュレーション'}</button></div>`);
+    <h4>使っている部品</h4><div class="tags">${[...new Set(p.comps.map(c => c[0]))].filter(t => t !== 'GND').map(t => `<button data-doc="${t}">${SHORT[t]}</button>`).join('')}</div>`);
   renderStatic($('#mbig'), makeCirc(p), { maxS: 34 });
-  $('#mopen').onclick = () => { closeModal(); if (S.pat === id) { showView('edit'); return; } loadPattern(id); };
+  $('#mopen').onclick = () => { closeModal(); if (S.guide) endGuide(true); if (S.pat === id && !S.edited) { showView('edit'); return; } loadPattern(id); };
+  $('#mguide').onclick = () => { closeModal(); startGuide(id); };
+  mbox.querySelectorAll('[data-pur]').forEach(b => b.onclick = () => { closeModal(); patFilter = b.dataset.pur; buildPatterns(); showView('pat'); });
   mbox.querySelectorAll('[data-doc]').forEach(b => b.onclick = () => openDoc(b.dataset.doc));
 }
 function openDoc(t) {
@@ -1640,7 +2013,8 @@ function openMenu() {
     <div class="field"><label for="sname">名前</label><div class="in"><input id="sname" placeholder="例：自作の電源回路" style="font-family:var(--f-body)"><button class="btn primary" id="msave">保存</button></div></div>
     <div id="slist"></div>
     <h4>表示</h4>
-    <div class="mact" style="margin-top:4px"><button class="btn" data-th="light">ライト</button><button class="btn" data-th="dark">ダーク</button><button class="btn" data-th="">端末に合わせる</button></div>`);
+    <div class="mact" style="margin-top:4px"><button class="btn" id="mflow">${S.showFlow ? '電流の流れ（動く点）を隠す' : '電流の流れ（動く点）を表示'}</button></div>
+    <div class="mact" style="margin-top:8px"><button class="btn" data-th="light">ライト</button><button class="btn" data-th="dark">ダーク</button><button class="btn" data-th="">端末に合わせる</button></div>`);
   $('#sspd').oninput = e => $('#sspdv').textContent = '×' + Math.pow(10, +e.target.value).toFixed(2);
   $('#sapply').onclick = () => {
     const dt = parseSI($('#sdt').value), win = parseSI($('#swin').value);
@@ -1655,6 +2029,7 @@ function openMenu() {
     const list = store.get('kairo.saves') || []; list.unshift({ name, data: JSON.parse(snapshot()), at: Date.now() });
     store.set('kairo.saves', list.slice(0, 40)); $('#sname').value = ''; drawSaves(); toast('「' + name + '」を保存しました');
   };
+  $('#mflow').onclick = () => { S.showFlow = !S.showFlow; store.set('kairo.flow', S.showFlow); if (S.sim) S.sim.trackCur = S.showFlow; dirty = true; closeModal(); toast(S.showFlow ? '電流の流れを表示します' : '電流の流れを隠しました'); };
   mbox.querySelectorAll('[data-th]').forEach(b => b.onclick = () => {
     const v = b.dataset.th; if (v) document.documentElement.dataset.theme = v; else delete document.documentElement.dataset.theme;
     store.set('kairo.theme', v); themeChanged();
@@ -1676,10 +2051,14 @@ function drawSaves() {
 /* ---------- 一覧ビュー ---------- */
 let patFilter = 'すべて';
 function buildPatterns() {
-  const cats = ['すべて', ...new Set(PATTERNS.map(p => p.cat))];
-  $('#patFilters').innerHTML = cats.map(c => `<button class="${c === patFilter ? 'on' : ''}" data-c="${c}">${c}</button>`).join('');
-  $('#patFilters').querySelectorAll('button').forEach(b => b.onclick = () => { patFilter = b.dataset.c; buildPatterns(); });
-  const list = PATTERNS.filter(p => patFilter === 'すべて' || p.cat === patFilter);
+  const cats = [['すべて', 'すべて'], ...PURPOSES.map(q => [q.id, q.name])];
+  $('#patFilters').innerHTML = cats.map(([id, n]) => `<button class="${id === patFilter ? 'on' : ''}" data-c="${id}">${n}</button>`).join('');
+  $('#patFilters').querySelectorAll('button').forEach(b => b.onclick = () => { patFilter = b.dataset.c; buildPatterns(); drawPatternThumbs(); });
+  const pur = PURPOSES.find(q => q.id === patFilter);
+  $('#purBox').innerHTML = pur ? `<h3>${pur.name}</h3><p class="lead">${pur.lead}</p><h4>何がうれしい？</h4><p>${pur.why}</p><h4>身近な例</h4><div class="tags">${pur.ex.map(x => `<span class="extag">${x}</span>`).join('')}</div>`
+    : `<h3>目的から回路を選ぶ</h3><p class="lead">回路は「何をしたいか」で形が決まります。上のボタンで目的を選ぶと、その回路が何の役に立つのかを説明します。</p><div class="purgrid">${PURPOSES.map(q => `<button data-pq="${q.id}"><b>${q.name}</b><span>${q.lead}</span></button>`).join('')}</div>`;
+  $('#purBox').querySelectorAll('[data-pq]').forEach(b => b.onclick = () => { patFilter = b.dataset.pq; buildPatterns(); drawPatternThumbs(); });
+  const list = PATTERNS.filter(p => !pur || pur.pats.includes(p.id));
   $('#patCards').innerHTML = list.map(p => `<button class="card" data-p="${p.id}"><canvas></canvas><div class="cb"><span class="cat">${p.cat}</span><span class="nm">${p.name}</span><span class="sm">${p.summary}</span></div></button>`).join('');
   $('#patCards').querySelectorAll('.card').forEach(b => b.onclick = () => openPattern(b.dataset.p));
   drawPatternThumbs();
@@ -1699,9 +2078,154 @@ function showView(v) {
 }
 document.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => showView(b.dataset.v));
 
+/* ---------- ステップ再生 ---------- */
+const GSPEED = [[2, 'じっくり'], [1, 'ふつう'], [0.5, 'はやめ']];
+let gMul = (() => { const v = store.get('kairo.gmul'); return typeof v === 'number' ? v : 1; })();
+function compByLabel(l) { return S.circ.comps.find(c => c.label === l); }
+function guideVal(expr) {
+  const [k, a, b] = expr.split(':'), sim = S.sim; if (!sim) return null;
+  if (k === 'n') { const p = S.circ.probes.find(q => q.name === a); if (!p) return null; const n = netOfPoint(sim, S.circ, p.x, p.y); return [n >= 0 ? sim.v(n) : NaN, 'V']; }
+  const c = compByLabel(a); if (!c) return null; const e = sim.byId.get(c.id); if (!e) return null;
+  if (k === 'v') return [sim.v(e.n[0]) - sim.v(e.n[1]), 'V'];
+  if (k === 'vr') return [sim.v(e.n[1]) - sim.v(e.n[0]), 'V'];
+  if (k === 'pin') return [sim.v(e.n[+b]), 'V'];
+  if (k === 'i') return [e.pi ? e.pi[0] : 0, 'A'];
+  if (k === 'ia') return [e.pi ? Math.abs(e.pi[0]) : 0, 'A'];
+  if (k === 'st') { const v = e.st[b]; if (typeof v === 'boolean') return [v ? 'セット（出力H）' : 'リセット（出力L）', '']; return [v || 0, 'A']; }
+  return null;
+}
+function startGuide(id) {
+  const p = PATTERNS.find(x => x.id === id), scenes = GUIDES[id]; if (!p || !scenes) return;
+  if (S.circ && S.circ.comps.length && (S.pat !== id || S.edited)) pushUndo();
+  setRunning(false); S.sel = null; closeSheet(); setMode('select');
+  S.pat = id; S.edited = false; S.circ = makeCirc(p); S.set = { dt: p.dt, win: p.win, speed: S.set.speed || 1 };
+  changed(true);
+  S.guide = { p, scenes, idx: 0, state: 'done', paused: false, hi: new Set() };
+  showView('edit'); document.body.classList.add('guiding'); $('#guide').hidden = false;
+  buildGuidePanel();
+  requestAnimationFrame(() => { resize(); fitView(); guideReplay(0); });
+}
+function endGuide(silent) {
+  if (!S.guide) return;
+  S.guide = null; document.body.classList.remove('guiding'); $('#guide').hidden = true; $('#guide').innerHTML = '';
+  setRunning(false); requestAnimationFrame(() => { resize(); fitView(); });
+  if (!silent) toast('ステップ再生を終了しました。▶ 実行で自由に動かせます。');
+}
+function guideApply(k) {
+  const sc = S.guide.scenes[k];
+  if (sc.sw) for (const [l, v] of Object.entries(sc.sw)) { const c = compByLabel(l); if (c) c.p.on = v; }
+  if (sc.set) for (const [l, o] of Object.entries(sc.set)) { const c = compByLabel(l); if (c) Object.assign(c.p, o); }
+  if (sc.win) { S.set.win = sc.win; if (S.buf) S.buf.next = S.sim ? S.sim.t : 0; }
+}
+function guideFastTo(t) {
+  const sim = S.sim, t0 = performance.now();
+  while (sim.t < t - 1e-12) { if (!sim.step()) { toast(sim.err); break; } sample(); if (performance.now() - t0 > 4000) break; }
+}
+function guideReplay(idx) {
+  const G = S.guide; if (!G) return;
+  S.sel = null; closeSheet();
+  S.circ = makeCirc(G.p); S.topo = topology(S.circ); S.set.win = G.p.win; S.set.dt = G.p.dt;
+  G.to = G.scenes[idx].to; startSim();
+  for (let k = 0; k < idx; k++) { guideApply(k); guideFastTo(G.scenes[k].to); }
+  guidePlay(idx);
+}
+function guidePlay(idx) {
+  const G = S.guide, sc = G.scenes[idx];
+  G.idx = idx; guideApply(idx);
+  G.from = S.sim.t; G.to = sc.to; G.dur = sc.dur * 1000; G.start = performance.now(); G.paused = false; G.state = 'play';
+  G.hi = new Set((sc.hi || []).map(l => (compByLabel(l) || {}).id).filter(Boolean));
+  fillGuidePanel(); dirty = true;
+}
+function guidePause(p) {
+  const G = S.guide; if (!G || G.state !== 'play') return;
+  if (p) { G.paused = true; G.pausedAt = performance.now(); }
+  else { G.paused = false; G.start += performance.now() - G.pausedAt; }
+  updateGuideButtons();
+}
+function guideTick(now) {
+  const G = S.guide, sim = S.sim; if (!sim) return;
+  if (G.state === 'play' && !G.paused) {
+    const f = Math.min(1, (now - G.start) / (G.dur * gMul));
+    const target = G.from + (G.to - G.from) * f, t0 = performance.now();
+    while (sim.t < target - 1e-12) { if (!sim.step()) { toast(sim.err); G.state = 'done'; break; } sample(); if (performance.now() - t0 > 12) break; }
+    if (f >= 1 && sim.t >= G.to - 1e-12) { G.state = 'done'; updateGuideButtons(); }
+    smoothVolts(); dirty = true; drawScope(); updateTime();
+  }
+  const bar = document.getElementById('gprog');
+  if (bar) bar.style.width = (G.state === 'done' ? 100 : Math.min(100, (sim.t - G.from) / (G.to - G.from) * 100)) + '%';
+  if (++G.tick % 4 === 0 || G.state === 'done') updateGuideVals();
+}
+function guideNext() {
+  const G = S.guide; if (!G) return;
+  if (G.state === 'play') { guideFastTo(G.to); G.state = 'done'; G.paused = false; smoothVolts(); drawScope(); updateTime(); updateGuideButtons(); updateGuideVals(); return; }
+  if (G.idx < G.scenes.length - 1) guidePlay(G.idx + 1);
+  else { endGuide(true); toast('おつかれさまでした。▶ 実行で続きを動かしたり、部品の値を変えて試せます。'); }
+}
+function buildGuidePanel() {
+  const G = S.guide, el = $('#guide');
+  el.innerHTML = `<div class="ghead"><span class="gstep mono" id="gstep"></span><b class="gh" id="gh"></b><button class="x" id="gx" aria-label="ステップ再生を終了">×</button></div>
+    <div class="gbars">${G.scenes.map((s, i) => `<button class="gbar" data-gi="${i}" aria-label="ステップ${i + 1}：${s.h}"><i></i></button>`).join('')}</div>
+    <p class="gt" id="gt"></p>
+    <div class="gv" id="gv"></div>
+    <div class="gctl">
+      <button class="btn" id="gprev" aria-label="前のステップ">◀</button>
+      <button class="btn" id="gagain">もう一度</button>
+      <select id="gspd" aria-label="再生の速さ">${GSPEED.map(([m, n]) => `<option value="${m}"${m === gMul ? ' selected' : ''}>${n}</option>`).join('')}</select>
+      <span class="sp"></span>
+      <button class="btn primary" id="gnext">次へ ▶</button>
+    </div>`;
+  // テキスト欄の高さを、このパターンでいちばん長い説明に合わせて固定（ステップ切替で画面が動かないように）
+  const gt = $('#gt'); let h = 0;
+  for (const s of G.scenes) { gt.textContent = s.text; h = Math.max(h, gt.scrollHeight); }
+  gt.style.height = Math.min(h, Math.round(innerHeight * .26)) + 'px';
+  const gv = $('#gv'); let vh = 0;
+  for (const s of G.scenes) { gv.innerHTML = (s.vals || []).map(([, l]) => `<div><span>${l}</span><b class="mono">0.00 mV</b></div>`).join(''); vh = Math.max(vh, gv.scrollHeight); }
+  gv.style.height = vh + 'px'; gv.innerHTML = '';
+  $('#gx').onclick = () => endGuide();
+  $('#gprev').onclick = () => guideReplay(Math.max(0, G.idx - 1));
+  $('#gagain').onclick = () => guideReplay(G.idx);
+  $('#gnext').onclick = guideNext;
+  $('#gspd').onchange = e => { const m = +e.target.value, G2 = S.guide; if (G2 && G2.state === 'play') { const now = performance.now(), f = (now - G2.start) / (G2.dur * gMul); G2.start = now - f * G2.dur * m; } gMul = m; store.set('kairo.gmul', m); };
+  el.querySelectorAll('[data-gi]').forEach(b => b.onclick = () => guideReplay(+b.dataset.gi));
+  G.tick = 0;
+}
+function fillGuidePanel() {
+  const G = S.guide, sc = G.scenes[G.idx];
+  $('#gstep').textContent = `STEP ${G.idx + 1}/${G.scenes.length}`;
+  $('#gh').textContent = sc.h;
+  $('#gt').textContent = sc.text; $('#gt').scrollTop = 0;
+  $('#gv').innerHTML = (sc.vals || []).map(([e, l], i) => `<div><span>${l}</span><b class="mono" id="gv${i}">—</b></div>`).join('');
+  document.querySelectorAll('.gbar').forEach((b, i) => { b.classList.toggle('past', i < G.idx); b.classList.toggle('cur', i === G.idx); b.querySelector('i').id = i === G.idx ? 'gprog' : ''; b.querySelector('i').style.width = i < G.idx ? '100%' : '0%'; });
+  updateGuideButtons(); updateGuideVals();
+}
+function updateGuideButtons() {
+  const G = S.guide; if (!G) return;
+  const last = G.idx === G.scenes.length - 1;
+  $('#gnext').textContent = G.state === 'play' ? '早送り ▶▶' : (last ? '完了' : '次へ ▶');
+  $('#gnext').classList.toggle('ready', G.state === 'done');
+  $('#gprev').disabled = G.idx === 0;
+  const b = $('#bRun');
+  b.textContent = G.state === 'play' && !G.paused ? '⏸ 一時停止' : '▶ 再開'; b.classList.toggle('on', G.state === 'play' && !G.paused);
+  b.disabled = G.state !== 'play';
+}
+function updateGuideVals() {
+  const G = S.guide; if (!G) return;
+  (G.scenes[G.idx].vals || []).forEach(([e], i) => {
+    const el = document.getElementById('gv' + i); if (!el) return;
+    const r = guideVal(e); el.textContent = !r ? '—' : typeof r[0] === 'number' ? fmtSI(r[0], r[1], 3) : r[0];
+  });
+}
+
 /* ---------- ボタン ---------- */
-$('#bRun').onclick = () => setRunning(!S.running);
-$('#bReset').onclick = () => { resetSim(); toast('時間を 0 に戻しました'); };
+$('#bRun').onclick = () => { if (S.guide) { guidePause(!S.guide.paused); return; } setRunning(!S.running); };
+$('#bReset').onclick = () => { if (S.guide) { guideReplay(0); return; } resetSim(); toast('時間を 0 に戻しました'); };
+const SPEEDS = [[1, '×1'], [0.25, '×1/4'], [1 / 16, '×1/16'], [1 / 64, '×1/64']];
+function updateSpeedChip() { const i = SPEEDS.findIndex(s => Math.abs(s[0] - S.set.speed) < 1e-9); $('#bSpeed').textContent = '速さ ' + (i >= 0 ? SPEEDS[i][1] : '×' + S.set.speed.toFixed(2)); }
+$('#bSpeed').onclick = () => {
+  const i = SPEEDS.findIndex(s => Math.abs(s[0] - S.set.speed) < 1e-9);
+  S.set.speed = SPEEDS[(i + 1) % SPEEDS.length][0]; updateSpeedChip(); save();
+  toast(S.set.speed === 1 ? 'ふつうの速さで再生します' : 'スローモーション：' + SPEEDS[(i + 1) % SPEEDS.length][1] + ' の速さで再生します');
+};
 $('#bUndo').onclick = () => { if (!S.undo.length) return; restore(S.undo.pop(), true); updateTopbar(); };
 $('#bMenu').onclick = openMenu;
 $('#bExplain').onclick = () => S.pat && openPattern(S.pat);
@@ -1711,10 +2235,11 @@ $('#zOut').onclick = () => zoomAt(W / 2, H / 2, 0.8);
 $('#zFit').onclick = fitView;
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-  if (e.key === 'Escape') { if (!modal.hidden) closeModal(); else if (S.mode !== 'select') setMode('select'); else select(null); }
+  if (e.key === 'Escape') { if (!modal.hidden) closeModal(); else if (S.guide) endGuide(); else if (S.mode !== 'select') setMode('select'); else select(null); }
   if ((e.key === 'Delete' || e.key === 'Backspace') && S.sel) { const b = document.getElementById('sdel'); if (b) b.click(); }
   if (e.key === 'r' && S.sel && S.sel.c) { const b = document.getElementById('srot'); if (b) b.click(); }
-  if (e.key === ' ' && modal.hidden) { e.preventDefault(); setRunning(!S.running); }
+  if (e.key === ' ' && modal.hidden) { e.preventDefault(); $('#bRun').click(); }
+  if (e.key === 'ArrowRight' && S.guide) guideNext();
 });
 
 /* ---------- テーマ ---------- */
@@ -1725,6 +2250,7 @@ new MutationObserver(themeChanged).observe(document.documentElement, { attribute
 /* ---------- 起動 ---------- */
 (function init() {
   const th = store.get('kairo.theme'); if (th) document.documentElement.dataset.theme = th;
+  const fl = store.get('kairo.flow'); if (fl === false) S.showFlow = false;
   readColors(); buildPalette(); buildPatterns(); buildDocs();
   const saved = store.get('kairo.current');
   const ok = saved && saved.circ && Array.isArray(saved.circ.comps) && saved.circ.comps.every(c => TYPES[c.t]);
